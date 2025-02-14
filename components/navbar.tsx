@@ -25,8 +25,11 @@ import {
   SearchIcon,
   Logo,
 } from "@/components/icons";
+import { useNavbar } from "@/context/NavbarContext";
 
 export const Navbar = () => {
+  const { setShowNavbar } = useNavbar();
+
   const searchInput = (
     <Input
       aria-label="Search"
@@ -53,8 +56,8 @@ export const Navbar = () => {
       <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
         <NavbarBrand as="li" className="gap-3 max-w-fit">
           <NextLink className="flex justify-start items-center gap-1" href="/">
-            <Logo />
-            <p className="font-bold text-inherit">ACME</p>
+            <Logo size="50px"/>
+            <p className="font-bold text-inherit">SoundSwipes</p>
           </NextLink>
         </NavbarBrand>
         <ul className="hidden lg:flex gap-4 justify-start ml-2">
@@ -106,12 +109,17 @@ export const Navbar = () => {
         </NavbarItem>
       </NavbarContent>
 
-      <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
-        <Link isExternal aria-label="Github" href={siteConfig.links.github}>
-          <GithubIcon className="text-default-500" />
-        </Link>
-        <ThemeSwitch />
-        <NavbarMenuToggle />
+      <NavbarContent justify="end">
+        <NavbarItem className="hidden lg:flex">
+          <Button onClick={() => setShowNavbar(false)} as={Link} href="/login">
+            Login
+          </Button>
+        </NavbarItem>
+        <NavbarItem>
+          <Button as={Link} color="primary" href="#" variant="flat">
+            Sign Up
+          </Button>
+        </NavbarItem>
       </NavbarContent>
 
       <NavbarMenu>

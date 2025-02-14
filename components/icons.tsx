@@ -3,24 +3,59 @@ import * as React from "react";
 import { IconSvgProps } from "@/types";
 
 export const Logo: React.FC<IconSvgProps> = ({
-  size = 36,
+  size = 120,
   width,
   height,
   ...props
 }) => (
-  <svg
-    fill="none"
-    height={size || height}
-    viewBox="0 0 32 32"
-    width={size || width}
-    {...props}
-  >
-    <path
-      clipRule="evenodd"
-      d="M17.6482 10.1305L15.8785 7.02583L7.02979 22.5499H10.5278L17.6482 10.1305ZM19.8798 14.0457L18.11 17.1983L19.394 19.4511H16.8453L15.1056 22.5499H24.7272L19.8798 14.0457Z"
-      fill="currentColor"
-      fillRule="evenodd"
-    />
+  <svg height={size || height} width={size || width} viewBox="0 0 185 224" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g filter="url(#filter0_d_6_1340)">
+  <g filter="url(#filter1_f_6_1340)">
+  <rect x="64.2791" y="4" width="110.186" height="167.674" rx="10" fill="#D3D4FF"/>
+  </g>
+  <g filter="url(#filter2_f_6_1340)">
+  <rect x="49.907" y="13.5814" width="110.186" height="167.674" rx="10" fill="#A5A7FE"/>
+  </g>
+  <g filter="url(#filter3_f_6_1340)">
+  <rect x="35.5349" y="23.1628" width="110.186" height="167.674" rx="10" fill="#7C7EFC"/>
+  </g>
+  <g filter="url(#filter4_f_6_1340)">
+  <rect x="21.1628" y="32.7442" width="110.186" height="167.674" rx="10" fill="#5558FD"/>
+  </g>
+  <rect x="2" y="42.3256" width="110.186" height="167.674" rx="10" fill="#171BF3"/>
+  </g>
+  <defs>
+  <filter id="filter0_d_6_1340" x="0" y="4" width="184.465" height="220" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+  <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+  <feOffset dx="4" dy="8"/>
+  <feGaussianBlur stdDeviation="3"/>
+  <feComposite in2="hardAlpha" operator="out"/>
+  <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+  <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_6_1340"/>
+  <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_6_1340" result="shape"/>
+  </filter>
+  <filter id="filter1_f_6_1340" x="60.2791" y="0" width="118.186" height="175.674" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+  <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+  <feGaussianBlur stdDeviation="2" result="effect1_foregroundBlur_6_1340"/>
+  </filter>
+  <filter id="filter2_f_6_1340" x="46.907" y="10.5814" width="116.186" height="173.674" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+  <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+  <feGaussianBlur stdDeviation="1.5" result="effect1_foregroundBlur_6_1340"/>
+  </filter>
+  <filter id="filter3_f_6_1340" x="33.5349" y="21.1628" width="114.186" height="171.674" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+  <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+  <feGaussianBlur stdDeviation="1" result="effect1_foregroundBlur_6_1340"/>
+  </filter>
+  <filter id="filter4_f_6_1340" x="20.1628" y="31.7442" width="112.186" height="169.674" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+  <feFlood floodOpacity="0" result="BackgroundImageFix"/>
+  <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+  <feGaussianBlur stdDeviation="0.5" result="effect1_foregroundBlur_6_1340"/>
+  </filter>
+  </defs>
   </svg>
 );
 
