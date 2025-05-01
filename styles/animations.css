@@ -1,0 +1,19 @@
+@keyframes letterWeight {
+    0%, 30% {
+      font-weight: 400;
+      opacity: 0.8;
+    }
+    45% {
+      font-weight: 700;
+      opacity: 1;
+    }
+    60%, 100% {
+      font-weight: 400;
+      opacity: 0.8;
+    }
+  }
+  
+  .animate-letter {
+    display: inline-block;
+    animation: letterWeight 6s ease-in-out infinite;
+  }
