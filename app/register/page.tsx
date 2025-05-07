@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Form, Input, Button } from "@heroui/react";
 
 export default function RegisterPage() {
   const [action, setAction] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,16 +22,17 @@ export default function RegisterPage() {
     };
 
     try {
-        const response = await fetch("http://localhost:3001/api/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(user),
-          });
+      const response = await fetch("http://localhost:3001/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(user),
+      });
 
       if (response.ok) {
         setAction("Utilisateur enregistré avec succès !");
+        router.push("/");
       } else {
         const error = await response.json();
         setAction(`Erreur : ${error.error}`);

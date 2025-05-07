@@ -1,38 +1,78 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 import Carousel from "@/components/Carousel";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.currentTarget));
+
+    const credentials = {
+      email: formData.email as string,
+      password: formData.password as string,
+    };
+
+    try {
+      const response = await fetch("http://localhost:3001/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Connexion réussie :", data);
+        router.push("/home"); // Redirige vers une page après connexion
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Erreur lors de la connexion.");
+      }
+    } catch (err) {
+      console.error("Erreur lors de la requête :", err);
+      setError("Une erreur est survenue. Veuillez réessayer.");
+    }
+  };
+
   return (
-    <div className="flex min-h-screen">
-      {/* Partie gauche - Formulaire */}
-      <div className="flex flex-col justify-center w-1/2 bg-gray-50 p-8">
+    <div className="flex flex-col min-h-screen">
+      {/* Partie supérieure - Formulaire */}
+      <div className="flex flex-col space-between justify-center bg-gray-50 min-h-screen relative">
         {/* Logo en haut */}
-        <div className="absolute top-8 left-1/4 transform -translate-x-1/4">
-          <Logo size={150} />
-          <h1 className="text-2xl font-bold text-center mb-4">Soundwipes</h1>
+        <div className="absolute top-8 flex flex-col items-center w-full">
+          <Logo size={120} />
+          <h1 className="text-2xl font-bold text-center">Soundwipes</h1>
         </div>
-        
+
         {/* Formulaire avec fond blanc */}
         <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
-          <h1 className="text-2xl font-bold text-center mb-4">Content de vous revoir 😊</h1>
+          <h1 className="text-2xl font-bold text-center mb-4">
+            Content de vous revoir 😊
+          </h1>
           <p className="text-center text-gray-500 mb-6">
             Connectez-vous à votre compte pour continuer.
           </p>
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleLogin}>
             <Input
               type="email"
+              name="email"
               placeholder="Adresse mail"
               className="w-full"
               required
             />
             <Input
               type="password"
+              name="password"
               placeholder="Mot de passe"
               className="w-full"
               required
@@ -46,6 +86,9 @@ export default function LoginPage() {
               Se connecter
             </Button>
           </form>
+          {error && (
+            <div className="text-center mt-4 text-red-500">{error}</div>
+          )}
           <div className="text-center mt-4">
             <a href="#" className="text-sm text-blue-600">
               Mot de passe oublié ?
@@ -58,11 +101,9 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
-      </div>
-
-      {/* Partie droite - Carousel */}
-      <div className="w-1/2">
-        <Carousel />
+        <div className="align-self-bottom mt-12">
+          <Carousel />
+        </div>
       </div>
     </div>
   );

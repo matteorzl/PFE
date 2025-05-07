@@ -30,7 +30,7 @@ export default function Carousel() {
   }, []);
 
   return (
-    <div className="relative h-full bg-blue-600">
+    <div className="relative h-full">
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -38,10 +38,10 @@ export default function Carousel() {
             index === current ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="flex flex-col items-center justify-center h-full p-12">
+          <div className="flex flex-col items-center justify-center h-content bg-blue-600">
             <div className="relative w-full max-w-2xl">
               {/* Bulle de dialogue */}
-              <div className="bg-white rounded-tr-3xl rounded-tl-3xl rounded-br-3xl p-6 m-20 shadow-lg">
+              <div className="bg-white w-full rounded-tr-3xl rounded-tl-3xl rounded-br-3xl p-6 m-16 shadow-lg">
                 <p className="text-blue-600">
                   <span className="text-3xl font-medium block">
                     <AnimatedText text={slide.title.highlight} />
@@ -52,12 +52,12 @@ export default function Carousel() {
                 </p>
               </div>
               {/* Avatar */}
-              <div className="absolute -bottom-20 left-2">
+              <div className="absolute bottom-0 left-1">
                 <Image 
                   src={slide.image}
                   alt=""
-                  width={150}
-                  height={150}
+                  width={100}
+                  height={100}
                   className="object-contain"
                 />
               </div>

@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { createUser } = require('../db/db.query');
+const { createUser,loginUser } = require('../db/db.query');
 
 const app = express();
 app.use(cors());
@@ -19,6 +19,18 @@ app.post('/api/register', async (req, res) => {
     }
   });
 
+  app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      const user = await loginUser(email, password);
+      res.status(200).json({ message: "Connexion réussie", user });
+    } catch (err) {
+      res.status(401).json({ error: err.message });
+    }
+  });
+
 app.listen(3001, () => {
   console.log("API d'enregistrement en cours d'exécution sur le port 3001");
 });
+
