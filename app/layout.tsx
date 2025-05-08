@@ -1,4 +1,4 @@
-import { Providers } from './providers'
+import { NavbarProvider } from "@/context/NavbarContext";
 import '../styles/globals.css'
 
 export default function RootLayout({
@@ -9,9 +9,9 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body>
-        <Providers>
+        <NavbarProvider>
           {children}
-        </Providers>
+        </NavbarProvider>
       </body>
     </html>
   )

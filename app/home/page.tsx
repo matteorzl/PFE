@@ -1,11 +1,8 @@
-import React from 'react';
-
-const HomePage = () => {
-  return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h1>Bienvenue sur notre application !</h1>
-    </div>
-  );
-};
-
-export default HomePage;
+export default function HomePage() {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-4">Tableau de bord</h1>
+        {/* Contenu de votre page d'accueil */}
+      </div>
+    );
+  }
