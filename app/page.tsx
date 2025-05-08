@@ -101,7 +101,7 @@ export default function LoginPage() {
             </Link>
           </div>
         </div>
-        <div className="align-self-bottom mt-12">
+        <div className="absolute bottom-0 flex flex-col items-center w-full">
           <Carousel />
         </div>
       </div>

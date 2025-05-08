@@ -27,7 +27,7 @@ async function createUser(user) {
 
 async function loginUser(email, password) {
   const query = `
-    SELECT * FROM users WHERE mail = ?;
+    SELECT * FROM users WHERE email = ?;
   `;
 
   try {

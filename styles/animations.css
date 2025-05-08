@@ -1,19 +1,18 @@
-@keyframes letterWeight {
-    0%, 30% {
-      font-weight: 400;
-      opacity: 0.8;
-    }
-    45% {
-      font-weight: 700;
-      opacity: 1;
-    }
-    60%, 100% {
-      font-weight: 400;
-      opacity: 0.8;
-    }
+@keyframes letterWave {
+  0%, 40%, 100% {
+    font-weight: 400;
+    opacity: 0.8;
+    transform: translateY(0) scaleY(1);
   }
-  
-  .animate-letter {
-    display: inline-block;
-    animation: letterWeight 6s ease-in-out infinite;
+  15%, 25% {
+    font-weight: 700;
+    opacity: 1;
+    transform: translateY(-6px) scaleY(1.1);
   }
+}
+
+.animate-letter {
+  display: inline-block;
+  animation: letterWave 4s ease-in-out infinite;
+  transform-origin: bottom;
+}
