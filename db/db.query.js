@@ -9,7 +9,7 @@ async function createUser(user) {
   const hashedPassword = await bcrypt.hash(password, saltRounds);
 
   const query = `
-    INSERT INTO users (firstname, lastname, email, password, country, city)
+    INSERT INTO users (firstname, lastname, mail, password, country, city)
     VALUES (?, ?, ?, ?, ?, ?);
   `;
   const values = [firstname, lastname, email, hashedPassword, country, city];
@@ -27,7 +27,7 @@ async function createUser(user) {
 
 async function loginUser(email, password) {
   const query = `
-    SELECT * FROM users WHERE email = ?;
+    SELECT * FROM users WHERE mail = ?;
   `;
 
   try {
@@ -56,7 +56,38 @@ async function loginUser(email, password) {
   }
 }
 
+async function getUsersNumber() {
+  const query = `SELECT COUNT(*) AS count FROM users`;
+
+  try {
+    const con = await createConnection(); // Établir la connexion
+    const [rows] = await con.query(query); // Utiliser `query` au lieu de `execute` pour une requête simple
+    await con.end(); // Fermer la connexion
+    return rows[0].count; // Retourner le nombre d'utilisateurs
+  } catch (err) {
+    console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
+    throw err; // Relancer l'erreur pour la gestion en amont
+  }
+}
+
+async function getAllUsers() {
+  const query = `SELECT * FROM users`;
+
+  try {
+    const con = await createConnection(); // Établir la connexion
+    const [rows] = await con.query(query); // Utiliser `query` au lieu de `execute` pour une requête simple
+    await con.end(); // Fermer la connexion
+    return rows; // Retourner tous les utilisateurs
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des utilisateurs :", err);
+    throw err; // Relancer l'erreur pour la gestion en amont
+  }
+}
+
 module.exports = {
   createUser,
   loginUser,
+  getUsersNumber,
+  getAllUsers,
 };
