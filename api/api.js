@@ -1,14 +1,26 @@
 const express = require('express');
 const cors = require('cors');
-const { createUser,loginUser,getUsersNumber,getAllUsers } = require('../db/db.query');
+const { createUser,loginUser,getUsersNumber,getAllUsers,getAllCategories,getCardsByCategory } = require('../db/db.query');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
+
+app.listen(3001, () => {
+  console.log("API d'enregistrement en cours d'exécution sur le port 3001");
+});
+
+////////////
+/* USERS */
+//////////
 
 app.post('/api/register', async (req, res) => {
   const user = req.body;
-  console.log("Données reçues :", user); // Vérifiez les données ici
 
   try {
     const result = await createUser(user);
@@ -50,7 +62,27 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.listen(3001, () => {
-  console.log("API d'enregistrement en cours d'exécution sur le port 3001");
+/////////////
+/* SERIES */
+///////////
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const categories = await getAllCategories();
+    res.status(200).json(categories);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des catégories :", err);
+    res.status(500).json({ error: "Erreur lors de la récupération des catégories." });
+  }
 });
 
+app.get('/api/categories/:categoryId/cards', async (req, res) => {
+  const { categoryId } = req.params;
+  try {
+    const cards = await getCardsByCategory(categoryId);
+    res.status(200).json(cards);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des cartes :", err);
+    res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
+  }
+});

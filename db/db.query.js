@@ -41,13 +41,11 @@ async function loginUser(email, password) {
 
     const user = rows[0];
 
-    // Comparer le mot de passe fourni avec le mot de passe hashé
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new Error("Mot de passe incorrect");
     }
 
-    // Retourner les informations de l'utilisateur (sans le mot de passe)
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   } catch (err) {
@@ -60,13 +58,13 @@ async function getUsersNumber() {
   const query = `SELECT COUNT(*) AS count FROM users`;
 
   try {
-    const con = await createConnection(); // Établir la connexion
-    const [rows] = await con.query(query); // Utiliser `query` au lieu de `execute` pour une requête simple
-    await con.end(); // Fermer la connexion
-    return rows[0].count; // Retourner le nombre d'utilisateurs
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+    return rows[0].count;
   } catch (err) {
     console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
-    throw err; // Relancer l'erreur pour la gestion en amont
+    throw err;
   }
 }
 
@@ -74,14 +72,48 @@ async function getAllUsers() {
   const query = `SELECT * FROM users`;
 
   try {
-    const con = await createConnection(); // Établir la connexion
-    const [rows] = await con.query(query); // Utiliser `query` au lieu de `execute` pour une requête simple
-    await con.end(); // Fermer la connexion
-    return rows; // Retourner tous les utilisateurs
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+    return rows;
   }
   catch (err) {
     console.error("Erreur lors de la récupération des utilisateurs :", err);
-    throw err; // Relancer l'erreur pour la gestion en amont
+    throw err;
+  }
+}
+
+async function getAllCategories() {
+  const query = `SELECT * FROM category`;
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+    return rows;
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des catégories :", err);
+    throw err;
+  }
+}
+
+async function getCardsByCategory(categoryId) {
+  const query = `
+    SELECT * FROM card 
+    WHERE category_id = ?
+    ORDER BY order_list ASC
+  `;
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [categoryId]);
+    await con.end();
+    return rows;
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des cartes :", err);
+    throw err;
   }
 }
 
@@ -90,4 +122,6 @@ module.exports = {
   loginUser,
   getUsersNumber,
   getAllUsers,
+  getAllCategories,
+  getCardsByCategory,
 };

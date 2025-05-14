@@ -31,6 +31,7 @@ CREATE TABLE `card` (
   `id` int(11) NOT NULL,
   `name` varchar(100) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
+  `order_list` int(11) DEFAULT NULL,
   `sound_file` blob DEFAULT NULL,
   `draw_animation` blob DEFAULT NULL,
   `real_animation` blob DEFAULT NULL,

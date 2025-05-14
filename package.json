@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix",
-    "api": "node api/users.js"
+    "api": "node api/api.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
