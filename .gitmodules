@@ -1,0 +1,3 @@
+[submodule "SoundSwipes"]
+	path = SoundSwipes
+	url = https://github.com/JulienBlanchon/SoundSwipes.git
