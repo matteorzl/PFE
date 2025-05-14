@@ -1,5 +1,8 @@
+-- Désactiver temporairement les contraintes de clés étrangères
+SET FOREIGN_KEY_CHECKS=0;
+
 -- Insertion des utilisateurs
-INSERT INTO users (firstname, lastname, password, role, email, country, city) VALUES 
+INSERT INTO users (firstname, lastname, password, role, mail, country, city) VALUES 
 ('Jean', 'Dupont', '$2b$10$ABC123', 1, 'jean.dupont@email.com', 'France', 'Paris'),
 ('Marie', 'Martin', '$2b$10$DEF456', 1, 'marie.martin@email.com', 'France', 'Lyon'),
 ('Pierre', 'Bernard', '$2b$10$GHI789', 0, 'pierre.bernard@email.com', 'France', 'Marseille'),
@@ -13,14 +16,25 @@ SELECT id FROM users WHERE role = 0;
 INSERT INTO therapist (user_id) 
 SELECT id FROM users WHERE role = 1;
 
--- Insertion des catégories
-INSERT INTO category (name, description, image, created_by) VALUES
+-- Mise à jour des liens thérapeutes-patients
+UPDATE therapist t
+JOIN (SELECT id FROM patient LIMIT 1) p1 ON 1=1
+SET t.patient_id = p1.id
+WHERE t.id = 1;
+
+UPDATE therapist t
+JOIN (SELECT id FROM patient WHERE id != (SELECT patient_id FROM therapist WHERE id = 1) LIMIT 1) p2 ON 1=1
+SET t.patient_id = p2.id
+WHERE t.id = 2;
+
+-- Insertion des catégories (maintenant avec AUTO_INCREMENT)
+INSERT INTO category (name, description, image, created_by) VALUES 
 ('Animaux', 'Sons d''animaux', 'animals.jpg', 1),
 ('Transport', 'Sons de véhicules', 'transport.jpg', 1),
 ('Nature', 'Sons de la nature', 'nature.jpg', 2),
 ('Musique', 'Instruments de musique', 'music.jpg', 2);
 
--- Association thérapeutes-catégories
+-- Association thérapeutes-catégories (après création des catégories)
 INSERT INTO therapist_category (therapist_id, category_id) VALUES
 (1, 1), (1, 2), (2, 3), (2, 4);
 
@@ -39,11 +53,5 @@ INSERT INTO card (name, category_id, order_list, is_validated, created_by) VALUE
 ('Piano', 4, 1, 1, 2),
 ('Guitare', 4, 2, 1, 2);
 
--- Mise à jour des liens thérapeutes-patients
-UPDATE therapist 
-SET patient_id = 1 
-WHERE id = 1;
-
-UPDATE therapist 
-SET patient_id = 2 
-WHERE id = 2;
+-- Réactiver les contraintes de clés étrangères
+SET FOREIGN_KEY_CHECKS=1;

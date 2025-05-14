@@ -1,70 +1,22 @@
-import {
-  Navbar as HeroUINavbar,
-  NavbarContent,
-  NavbarMenu,
-  NavbarMenuToggle,
-  NavbarBrand,
-  NavbarItem,
-  NavbarMenuItem,
-} from "@heroui/navbar";
-import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
-import { Link } from "@heroui/link";
-import { Input } from "@heroui/input";
-import { link as linkStyles } from "@heroui/theme";
-import NextLink from "next/link";
-import clsx from "clsx";
-import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
-import {
-  SearchIcon,
-  Logo,
-} from "@/components/icons";
+import { Button, Link } from "@heroui/react";
 import { useNavbar } from "@/context/NavbarContext";
 
 export const Navbar = () => {
   const { setShowNavbar } = useNavbar();
 
-  const searchInput = (
-    <Input
-      aria-label="Search"
-      classNames={{
-        inputWrapper: "bg-default-100",
-        input: "text-sm",
-      }}
-      endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
-          K
-        </Kbd>
-      }
-      labelPlacement="outside"
-      placeholder="Search..."
-      startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
-      }
-      type="search"
-    />
-  );
-
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
-      <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
-        <NavbarBrand as="li" className="gap-3 max-w-fit">
-          <NextLink className="flex justify-start items-center gap-1" href="/home">
-            <Logo size={50}/>
-            <p className="font-bold text-inherit">SoundSwipes</p>
-          </NextLink>
-        </NavbarBrand>
-      </NavbarContent>
-
-      <NavbarContent justify="end">
-      <ThemeSwitch />
-        <NavbarItem className="hidden lg:flex">
-          <Button onClick={() => setShowNavbar(false)} as={Link} href="/">
-            Se déconnecter
-          </Button>
-        </NavbarItem>
-      </NavbarContent>
-    </HeroUINavbar>
+    <div className="fixed top-4 right-4">
+      <Button 
+        onClick={() => setShowNavbar(false)} 
+        as={Link} 
+        href="/"
+        className="bg-blue-600 text-white hover:bg-blue-700"
+      >
+        Se déconnecter
+        <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 9V5.25A2.25 2.25 0 0 1 10.5 3h6a2.25 2.25 0 0 1 2.25 2.25v13.5A2.25 2.25 0 0 1 16.5 21h-6a2.25 2.25 0 0 1-2.25-2.25V15m-3 0-3-3m0 0 3-3m-3 3H15" />
+        </svg>
+      </Button>
+    </div>
   );
 };

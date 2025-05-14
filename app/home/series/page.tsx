@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardBody, CardFooter, Image } from "@heroui/react";
+import { Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem } from "@heroui/react";
 
 interface Category {
   id: number;
@@ -39,20 +39,26 @@ export default function SeriesPage() {
     return <div>Chargement...</div>;
   }
 
-  const handleCardClick = (categoryId: number) => {
-    router.push(`/series/${categoryId}`);
-  };
+const handleCardClick = (categoryId: number, categoryName: string) => {
+    const encodedName = encodeURIComponent(categoryName);
+    router.push(`/home/series/${categoryId}?name=${encodedName}`);
+};
 
   return (
     <div className="gap-4 p-4">
+      <Breadcrumbs className="mb-4">
+        <BreadcrumbItem onClick={() => router.push('/home')}>Home</BreadcrumbItem>
+        <BreadcrumbItem>Séries</BreadcrumbItem>
+      </Breadcrumbs>
       <h1 className="text-2xl font-bold mb-4">Séries</h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {categories.map((category) => (
           <Card 
             key={category.id} 
+            isPressable
             className="hover:scale-105 transition-transform cursor-pointer"
-            onClick={() => handleCardClick(category.id)}
+            onPress={() => handleCardClick(category.id, category.name)}
           >
             <CardBody className="p-0">
               <Image
