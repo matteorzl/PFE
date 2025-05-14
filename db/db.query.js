@@ -85,9 +85,30 @@ async function getAllUsers() {
   }
 }
 
+const deleteUser = async (userId) => {
+  const con = await createConnection();
+  try {
+    const [result] = await con.query(
+      'DELETE FROM users WHERE id = ? RETURNING *',
+      [userId]
+    );
+    
+    if (!result || result.length === 0) {
+      throw new Error('Utilisateur non trouvé');
+    }
+    
+    return result[0];
+  } catch (error) {
+    throw error;
+  } finally {
+    con.end();
+  }
+};
+
 module.exports = {
   createUser,
   loginUser,
   getUsersNumber,
   getAllUsers,
+  deleteUser,
 };
