@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { createUser,loginUser,getUsersNumber,getAllUsers,deleteUser } = require('../db/db.query');
+const { createUser,loginUser,getUsersNumber,getAllUsers } = require('../db/db.query');
 
 const app = express();
 app.use(cors());
@@ -47,25 +47,6 @@ app.get('/api/users', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération des utilisateurs :", err);
     res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs." });
-  }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-  const userId = req.params.id;
-
-  try {
-    const deletedUser = await deleteUser(userId);
-    res.status(200).json({ 
-      message: "Utilisateur supprimé avec succès",
-      user: deletedUser 
-    });
-  } catch (err) {
-    console.error("Erreur lors de la suppression de l'utilisateur :", err);
-    if (err.message === 'Utilisateur non trouvé') {
-      res.status(404).json({ error: "Utilisateur non trouvé." });
-    } else {
-      res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur." });
-    }
   }
 });
 
