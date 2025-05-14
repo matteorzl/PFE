@@ -4,6 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
+PFE\mobileApp\soundswipes\.expo
+PFE\mobileApp\soundswipes\node_modules
 
 # testing
 /coverage
