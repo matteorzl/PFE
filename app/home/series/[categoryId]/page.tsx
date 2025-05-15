@@ -125,7 +125,7 @@ const handleDragEnd = (event: DragEndEvent) => {
   return (
     <div className="gap-4 p-4">
       <Breadcrumbs className="mb-4">
-        <BreadcrumbItem onClick={() => router.push('/home')}>Home</BreadcrumbItem>
+        <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
         <BreadcrumbItem onClick={() => router.push('/home/series')}>Séries</BreadcrumbItem>
         <BreadcrumbItem>{categoryName}</BreadcrumbItem>
       </Breadcrumbs>
