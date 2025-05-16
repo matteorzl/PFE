@@ -9,10 +9,16 @@ import {
   TableCell,
   Chip,
   Tooltip,
+  Button,
+  Breadcrumbs,
+  BreadcrumbItem,
+  useToast,
 } from "@heroui/react";
 import React from "react";
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from "react";
 
+import { EditModal } from "@/components/EditModal";
 import { DeleteModal } from "@/components/DeleteModal";
 
 export const DeleteIcon = (props: any) => {
@@ -109,14 +115,28 @@ export const EditIcon = (props: any) => {
 const statusColorMap: Record<string, "success" | "danger" | "warning" | "default" | "primary" | "secondary" | undefined> = {
   admin: "success",
   patient: "secondary",
-  doctor: "warning",
+  therapist: "warning",
+};
+
+type User = {
+  id: string;
+  firstname: string;
+  lastname: string;
+  mail: string;
+  country: string;
+  city: string;
+  role: string;
+  // Add any other fields your user object may have
 };
 
 export default function UsersPage() {
-  const [rows, setRows] = useState([]);
+  const router = useRouter();
+  const [rows, setRows] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
 
   const columns = [
     { name: "ID", uid: "id" },
@@ -128,6 +148,26 @@ export default function UsersPage() {
     { name: "RÔLE", uid: "role" },
     { name: "ACTIONS", uid: "actions" },
   ];
+
+  const handleEdit = async (user: { id: string; firstname: string; lastname: string; mail: string }) => {
+    const response = await fetch(`http://localhost:3001/api/users/${user.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstname: user.firstname,
+        lastname: user.lastname,
+        mail: user.mail,
+      }),
+    });
+    if (!response.ok) throw new Error("Erreur lors de la modification");
+    setRows(prevRows =>
+      prevRows.map(row =>
+        row.id === user.id
+          ? { ...row, firstname: user.firstname, lastname: user.lastname, mail: user.mail }
+          : row
+      )
+    );
+  };
 
   const handleDelete = async (userId: string) => {
     try {
@@ -162,7 +202,13 @@ export default function UsersPage() {
         return (
           <div className="relative flex items-center gap-2">
             <Tooltip content="Modifier">
-              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+              <span
+                className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                onClick={() => {
+                  setSelectedUser(user);
+                  setIsEditModalOpen(true);
+                }}
+              >
                 <EditIcon />
               </span>
             </Tooltip>
@@ -204,6 +250,23 @@ export default function UsersPage() {
 
   return (
     <div className="p-4">
+      <Breadcrumbs className="mb-4">
+        <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
+        <BreadcrumbItem>Utilisateurs</BreadcrumbItem>
+      </Breadcrumbs>
+      <h1 className="text-2xl font-bold mb-4 w-100">
+        Utilisateurs 
+        <Button 
+          isIconOnly
+          color="primary" 
+          className='ml-6 mb-2'
+          onPress={() => router.push('/home/users/create')}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </Button> 
+      </h1> 
       <Table
         aria-label="Liste des utilisateurs"
         isHeaderSticky
@@ -241,6 +304,16 @@ export default function UsersPage() {
             )}
           </TableBody>
       </Table>
+
+      <EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedUser(null);
+        }}
+        onEdit={handleEdit}
+        user={selectedUser}
+      />
 
       {selectedUser && (
         <DeleteModal

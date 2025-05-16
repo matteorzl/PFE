@@ -96,10 +96,10 @@ export default function SeriesPage() {
     return <div>Chargement...</div>;
   }
 
-const handleCardClick = (categoryId: number, categoryName: string) => {
+  const handleCardClick = (categoryId: number, categoryName: string) => {
     const encodedName = encodeURIComponent(categoryName);
     router.push(`/home/series/${categoryId}?name=${encodedName}`);
-};
+  };
 
   return (
     <div className="gap-4 p-4">
@@ -107,26 +107,39 @@ const handleCardClick = (categoryId: number, categoryName: string) => {
         <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
         <BreadcrumbItem>Séries</BreadcrumbItem>
       </Breadcrumbs>
-      <h1 className="text-2xl font-bold mb-4">Séries</h1>
+      <h1 className="text-2xl font-bold mb-4 w-100">
+        Séries 
+        <Button 
+          color="primary" 
+          className='ml-6 mb-2'
+          onPress={() => router.push('/home/series/create')}
+          >Creer une série</Button> 
+      </h1> 
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {categories.map((category) => (
-          <Card 
-            key={category.id} 
+          <Card
+            key={category.id}
             isPressable
-            className="hover:scale-105 transition-transform cursor-pointer relative"
+            className="hover:scale-105 transition-transform cursor-pointer relative h-[200px] flex flex-col justify-end overflow-hidden"
+            style={{
+              backgroundImage: `url(${category.image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
             onPress={() => handleCardClick(category.id, category.name)}
           >
-            {/* Dropdown en haut à droite, centré sur lui-même */}
+            {/* Dropdown en haut à droite */}
             <div className="absolute top-2 right-2 flex justify-end w-full z-10">
               <Dropdown>
                 <DropdownTrigger>
-                  <Button variant="light" className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0">...</Button>
+                  <Button variant="light" className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0 text-white">...</Button>
                 </DropdownTrigger>
                 <DropdownMenu>
                   <DropdownItem
                     key="edit"
                     startContent={<EditDocumentIcon className={iconClasses} />}
+                    onClick={() => router.push(`/home/series/edit/${category.id}`)}
                   >
                     Modifier
                   </DropdownItem>
@@ -141,17 +154,16 @@ const handleCardClick = (categoryId: number, categoryName: string) => {
                 </DropdownMenu>
               </Dropdown>
             </div>
-            <CardBody className="p-0">
-              <Image
-                src={`/images/${category.image}`}
-                alt={category.name}
-                className="w-full h-[200px] object-cover"
-                radius="none"
-              />
-            </CardBody>
-            <CardFooter className="flex flex-col items-start">
-              <h4 className="font-bold text-large">{category.name}</h4>
-              <p className="text-small text-default-500">{category.description}</p>
+            {/* Overlay pour lisibilité du texte */}
+            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <h4 className="text-white text-6xl font-bold uppercase text-center drop-shadow-lg">
+                {category.name}
+              </h4>
+            </div>
+            {/* Description en bas si tu veux la garder */}
+            <CardFooter className="flex flex-col items-center relative z-10">
+              <p className="text-medium text-white">{category.description}</p>
             </CardFooter>
           </Card>
         ))}

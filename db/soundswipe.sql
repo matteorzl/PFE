@@ -111,7 +111,7 @@ CREATE TABLE `users` (
   `lastname` varchar(100) DEFAULT NULL,
   `password` varchar(100) DEFAULT NULL,
   `role` tinyint(4) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
+  `mail` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

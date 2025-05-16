@@ -68,6 +68,62 @@ async function getUsersNumber() {
   }
 }
 
+// Modifier un utilisateur
+async function updateUser(id, firstname, lastname, mail) {
+  const query = `
+    UPDATE users
+    SET firstname = ?, lastname = ?, mail = ?
+    WHERE id = ?
+  `;
+  const values = [firstname, lastname, mail, id];
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification de l'utilisateur :", err);
+    throw err;
+  }
+}
+
+// Supprimer un utilisateur
+const deleteUser = async (userId) => {
+  const con = await createConnection();
+  try {
+    const [result] = await con.query(
+      'DELETE FROM users WHERE id = ? RETURNING *',
+      [userId]
+    );
+    if (!result || result.length === 0) {
+      throw new Error('Utilisateur non trouvé');
+    }
+    return result[0];
+  } catch (error) {
+    throw error;
+  } finally {
+    con.end();
+  }
+};
+
+// Récupérer un utilisateur par son id
+async function getUserById(id) {
+  const query = `
+    SELECT id, firstname, lastname, mail, country, city
+    FROM users
+    WHERE id = ?
+  `;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [id]);
+    await con.end();
+    return rows[0] || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'utilisateur :", err);
+    throw err;
+  }
+}
+
 async function getAllUsers() {
   const query = `SELECT * FROM users`;
 
@@ -117,11 +173,68 @@ async function getCardsByCategory(categoryId) {
   }
 }
 
+async function updateCategory(id, name, description, image) {
+  let query, values;
+  if (image) {
+    query = `UPDATE category SET name = ?, description = ?, image = ? WHERE id = ?`;
+    values = [name, description, image, id];
+  } else {
+    query = `UPDATE category SET name = ?, description = ? WHERE id = ?`;
+    values = [name, description, id];
+  }
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification de la catégorie :", err);
+    throw err;
+  }
+}
+
+async function getCategoryById(categoryId) {
+  const query = `
+    SELECT * FROM category
+    WHERE id = ?
+  `;
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [categoryId]);
+    await con.end();
+    return rows[0]; // Retourne seulement la première (et unique) catégorie trouvée
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des cartes :", err);
+    throw err;
+  }
+}
+
+async function getTherapistIdByUserId(userId) {
+  const query = `SELECT id FROM Therapist WHERE user_id = ?`;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [userId]);
+    await con.end();
+    return rows[0]; // ou null si pas trouvé
+  } catch (err) {
+    throw err;
+  }
+}
+
+
 module.exports = {
   createUser,
   loginUser,
   getUsersNumber,
+  updateUser,
+  getUserById,   
   getAllUsers,
   getAllCategories,
   getCardsByCategory,
+  updateCategory,
+  getCategoryById,
+  getTherapistIdByUserId,
+  deleteUser,
 };

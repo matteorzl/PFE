@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Logo } from "@/components/icons";
 import Carousel from "@/components/Carousel";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +33,22 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log("Connexion réussie :", data);
-        router.push("/home"); // Redirige vers une page après connexion
+        const { password, ...userWithoutPassword } = data;
+        let userToStore = { ...userWithoutPassword };
+
+        // Si le user est therapist, récupère son id de therapist
+        if (userWithoutPassword.role === "therapist") {
+          const therapistRes = await fetch(`http://localhost:3001/api/therapist-id/${userWithoutPassword.id}`);
+          if (therapistRes.ok) {
+            const { therapistId } = await therapistRes.json();
+            userToStore.therapistId = therapistId;
+          }
+        }
+
+        // Enregistre toutes les données du user dans un seul cookie (objet JSON)
+        Cookies.set("user", JSON.stringify(userToStore), { expires: 7 });
+
+        router.push("/home");
       } else {
         const errorData = await response.json();
         setError(errorData.error || "Erreur lors de la connexion.");
@@ -43,7 +58,6 @@ export default function LoginPage() {
       setError("Une erreur est survenue. Veuillez réessayer.");
     }
   };
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Partie supérieure - Formulaire */}
