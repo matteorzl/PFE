@@ -376,7 +376,7 @@ export default function UsersPage() {
       </Breadcrumbs>
       <h1 className="text-2xl font-bold mb-4 w-100 flex items-baseline gap-2">
         Utilisateurs
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-s font-medium bg-blue-100 text-blue-800">
           {filteredItems.length}
         </span>
       </h1>

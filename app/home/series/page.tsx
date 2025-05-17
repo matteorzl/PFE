@@ -116,8 +116,13 @@ export default function SeriesPage() {
         <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
         <BreadcrumbItem>Séries</BreadcrumbItem>
       </Breadcrumbs>
-      <h1 className="text-2xl font-bold mb-4 w-100 flex items-center justify-between">
-        Séries
+      <h1 className="text-2xl font-bold mb-4 w-100 flex items-baseline gap-2 justify-between">
+        <span className="flex items-baseline gap-2">
+          Séries
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-s font-medium bg-blue-100 text-blue-800">
+            {categories.length}
+          </span>
+        </span>
         <Button 
           color="primary" 
           endContent={<PlusIcon />}
