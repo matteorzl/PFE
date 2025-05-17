@@ -12,6 +12,15 @@ interface Category {
   created_by: number;
 }
 
+export const PlusIcon = (props: any) => (
+  <svg aria-hidden="true" fill="none" focusable="false" height={24} width={24} {...props}>
+    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
+      <path d="M6 12h12" />
+      <path d="M12 18V6" />
+    </g>
+  </svg>
+);
+
 export const EditDocumentIcon = (props: any) => {
   return (
     <svg
@@ -107,14 +116,17 @@ export default function SeriesPage() {
         <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
         <BreadcrumbItem>Séries</BreadcrumbItem>
       </Breadcrumbs>
-      <h1 className="text-2xl font-bold mb-4 w-100">
-        Séries 
+      <h1 className="text-2xl font-bold mb-4 w-100 flex items-center justify-between">
+        Séries
         <Button 
           color="primary" 
-          className='ml-6 mb-2'
+          endContent={<PlusIcon />}
+          size="sm"
           onPress={() => router.push('/home/series/create')}
-          >Creer une série</Button> 
-      </h1> 
+        >
+          Creer une série
+        </Button>
+      </h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {categories.map((category) => (

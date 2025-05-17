@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const upload = multer(); // stockage en mémoire
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { 
   /*user*/
   createUser,
@@ -32,6 +33,20 @@ app.listen(3001, () => {
   console.log("API d'enregistrement en cours d'exécution sur le port 3001");
 });
 
+const SECRET = 'votre_secret_ultra_complexe'; // Mets ça dans un .env en prod !
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
 ////////////
 /* USERS */
 //////////
@@ -55,7 +70,13 @@ app.post('/api/login', async (req, res) => {
 
   try {
     const user = await loginUser(email, password);
-    res.status(200).json({ message: "Connexion réussie", user });
+    // Génère le token
+    const token = jwt.sign(
+      { id: user.id, role: user.role }, // tu peux ajouter d'autres infos
+      SECRET,
+      { expiresIn: '7d' }
+    );
+    res.status(200).json({ message: "Connexion réussie", user, token });
   } catch (err) {
     res.status(401).json({ error: err.message });
   }
@@ -106,12 +127,11 @@ app.delete('/api/users/:id', async (req, res) => {
 });
 
 // Récupérer tous les utilisateurs
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', authenticateToken, async (req, res) => {
   try {
     const users = await getAllUsers();
     res.status(200).json(users);
   } catch (err) {
-    console.error("Erreur lors de la récupération des utilisateurs :", err);
     res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs." });
   }
 });

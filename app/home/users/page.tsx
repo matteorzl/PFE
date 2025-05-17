@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Table,
   TableHeader,
@@ -7,19 +8,62 @@ import {
   TableBody,
   TableRow,
   TableCell,
-  Chip,
-  Tooltip,
+  Input,
   Button,
+  DropdownTrigger,
+  Dropdown,
+  DropdownMenu,
+  DropdownItem,
+  Chip,
   Breadcrumbs,
   BreadcrumbItem,
-  useToast,
+  Tooltip,
 } from "@heroui/react";
-import React from "react";
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from "react";
-
+import { useRouter } from "next/navigation";
 import { EditModal } from "@/components/EditModal";
 import { DeleteModal } from "@/components/DeleteModal";
+import Cookies from "js-cookie";
+
+export const PlusIcon = (props: any) => (
+  <svg aria-hidden="true" fill="none" focusable="false" height={24} width={24} {...props}>
+    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
+      <path d="M6 12h12" />
+      <path d="M12 18V6" />
+    </g>
+  </svg>
+);
+
+export const ChevronDownIcon = (props: any) => (
+  <svg aria-hidden="true" fill="none" focusable="false" height="1em" width="1em" viewBox="0 0 24 24" {...props}>
+    <path
+      d="m19.92 8.95-6.52 6.52c-.77.77-2.03.77-2.8 0L4.08 8.95"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeMiterlimit={10}
+      strokeWidth={1.5}
+    />
+  </svg>
+);
+
+export const SearchIcon = (props: any) => (
+  <svg aria-hidden="true" fill="none" focusable="false" height="1em" width="1em" viewBox="0 0 24 24" {...props}>
+    <path
+      d="M11.5 21C16.7467 21 21 16.7467 21 11.5C21 6.25329 16.7467 2 11.5 2C6.25329 2 2 6.25329 2 11.5C2 16.7467 6.25329 21 11.5 21Z"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+    <path
+      d="M22 22L20 20"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+  </svg>
+);
 
 export const DeleteIcon = (props: any) => {
   return (
@@ -112,11 +156,29 @@ export const EditIcon = (props: any) => {
   );
 };
 
-const statusColorMap: Record<string, "success" | "danger" | "warning" | "default" | "primary" | "secondary" | undefined> = {
+const statusColorMap = {
   admin: "success",
   patient: "secondary",
   therapist: "warning",
 };
+
+const statusOptions = [
+  { name: "Admin", uid: "admin" },
+  { name: "Patient", uid: "patient" },
+  { name: "Therapist", uid: "therapist" },
+];
+
+const columns = [
+  { name: "NOM", uid: "lastname", sortable: true },
+  { name: "PRÉNOM", uid: "firstname", sortable: true },
+  { name: "EMAIL", uid: "mail", sortable: true },
+  { name: "PAYS", uid: "country", sortable: true },
+  { name: "VILLE", uid: "city", sortable: true },
+  { name: "RÔLE", uid: "role", sortable: true },
+  { name: "ACTIONS", uid: "actions" },
+];
+
+const INITIAL_VISIBLE_COLUMNS = ["lastname", "firstname", "mail", "role", "actions"];
 
 type User = {
   id: string;
@@ -126,7 +188,6 @@ type User = {
   country: string;
   city: string;
   role: string;
-  // Add any other fields your user object may have
 };
 
 export default function UsersPage() {
@@ -137,60 +198,38 @@ export default function UsersPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Filtres et colonnes
+  const [filterValue, setFilterValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState(new Set(["all"]));
+  const [visibleColumns, setVisibleColumns] = useState(new Set(INITIAL_VISIBLE_COLUMNS));
 
-  const columns = [
-    { name: "ID", uid: "id" },
-    { name: "PRÉNOM", uid: "firstname" },
-    { name: "NOM", uid: "lastname" },
-    { name: "EMAIL", uid: "mail" },
-    { name: "PAYS", uid: "country" },
-    { name: "VILLE", uid: "city" },
-    { name: "RÔLE", uid: "role" },
-    { name: "ACTIONS", uid: "actions" },
-  ];
+  // Recherche et filtres
+  const hasSearchFilter = Boolean(filterValue);
 
-  const handleEdit = async (user: { id: string; firstname: string; lastname: string; mail: string }) => {
-    const response = await fetch(`http://localhost:3001/api/users/${user.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firstname: user.firstname,
-        lastname: user.lastname,
-        mail: user.mail,
-      }),
-    });
-    if (!response.ok) throw new Error("Erreur lors de la modification");
-    setRows(prevRows =>
-      prevRows.map(row =>
-        row.id === user.id
-          ? { ...row, firstname: user.firstname, lastname: user.lastname, mail: user.mail }
-          : row
-      )
-    );
-  };
+  const headerColumns = useMemo(() => {
+    if (visibleColumns === "all") return columns;
+    return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
+  }, [visibleColumns]);
 
-  const handleDelete = async (userId: string) => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erreur lors de la suppression de l'utilisateur");
-      }
-
-      setRows(prevRows => prevRows.filter(row => row.id !== userId));
-      setIsDeleteModalOpen(false);
-      setSelectedUser(null);
-    } catch (error) {
-      throw error;
+  const filteredItems = useMemo(() => {
+    let filtered = [...rows];
+    if (hasSearchFilter) {
+      filtered = filtered.filter(
+        (user) =>
+          user.firstname.toLowerCase().includes(filterValue.toLowerCase()) ||
+          user.lastname.toLowerCase().includes(filterValue.toLowerCase()) ||
+          user.mail.toLowerCase().includes(filterValue.toLowerCase())
+      );
     }
-  };
+    if (!statusFilter.has("all")) {
+      filtered = filtered.filter((user) => statusFilter.has(user.role));
+    }
+    return filtered;
+  }, [rows, filterValue, statusFilter]);
 
-  const renderCell = React.useCallback((user: any, columnKey: any) => {
+  // Rendu des cellules
+  const renderCell = useCallback((user: any, columnKey: any) => {
     const cellValue = user[columnKey];
-  
     switch (columnKey) {
       case "role":
         return (
@@ -213,7 +252,7 @@ export default function UsersPage() {
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Supprimer">
-              <span 
+              <span
                 className="text-lg text-danger cursor-pointer active:opacity-50"
                 onClick={() => {
                   setSelectedUser(user);
@@ -231,22 +270,103 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const response = await fetch("http://localhost:3001/api/users");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des utilisateurs");
-        }
-        const data = await response.json();
+    const fetchUsers = async () => {
+      const token = Cookies.get("token");
+      const res = await fetch("http://localhost:3001/api/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
         setRows(data);
-      } catch (error) {
-        console.error("Erreur :", error);
-      } finally {
-        setLoading(false);
       }
-    }
+    };
     fetchUsers();
   }, []);
+
+  // Top content (barre de recherche, filtres, colonnes, bouton add)
+  const topContent = (
+    <div className="flex flex-col gap-4 mb-4">
+      <div className="flex justify-between gap-3 items-end">
+        <Input
+          isClearable
+          classNames={{
+            base: "w-full sm:max-w-[44%]",
+            inputWrapper: "border-1",
+          }}
+          placeholder="Rechercher par nom, prénom ou email..."
+          size="sm"
+          startContent={<SearchIcon className="text-default-300" />}
+          value={filterValue}
+          variant="bordered"
+          onClear={() => setFilterValue("")}
+          onValueChange={setFilterValue}
+        />
+        <div className="flex gap-3">
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                endContent={<ChevronDownIcon className="text-small" />}
+                size="sm"
+                variant="flat"
+              >
+                Statut
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Filtrer par rôle"
+              closeOnSelect={false}
+              selectedKeys={statusFilter}
+              selectionMode="multiple"
+              onSelectionChange={setStatusFilter}
+            >
+              <DropdownItem key="all" className="capitalize">Tous</DropdownItem>
+              {statusOptions.map((status) => (
+                <DropdownItem key={status.uid} className="capitalize">
+                  {status.name}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
+          <Dropdown>
+            <DropdownTrigger className="hidden sm:flex">
+              <Button
+                endContent={<ChevronDownIcon className="text-small" />}
+                size="sm"
+                variant="flat"
+              >
+                Colonnes
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu
+              disallowEmptySelection
+              aria-label="Colonnes du tableau"
+              closeOnSelect={false}
+              selectedKeys={visibleColumns}
+              selectionMode="multiple"
+              onSelectionChange={setVisibleColumns}
+            >
+              {columns.map((column) => (
+                <DropdownItem key={column.uid} className="capitalize">
+                  {column.name}
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+          </Dropdown>
+          <Button
+            color="primary" 
+            endContent={<PlusIcon />}
+            size="sm"
+            onPress={() => router.push('/home/users/create')}
+          >
+            Ajouter un utilisateur
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4">
@@ -254,67 +374,48 @@ export default function UsersPage() {
         <BreadcrumbItem onClick={() => router.push('/home')}>Tableau de bord</BreadcrumbItem>
         <BreadcrumbItem>Utilisateurs</BreadcrumbItem>
       </Breadcrumbs>
-      <h1 className="text-2xl font-bold mb-4 w-100">
-        Utilisateurs 
-        <Button 
-          isIconOnly
-          color="primary" 
-          className='ml-6 mb-2'
-          onPress={() => router.push('/home/users/create')}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-          </svg>
-        </Button> 
-      </h1> 
+      <h1 className="text-2xl font-bold mb-4 w-100 flex items-baseline gap-2">
+        Utilisateurs
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+          {filteredItems.length}
+        </span>
+      </h1>
       <Table
         aria-label="Liste des utilisateurs"
         isHeaderSticky
         removeWrapper
         className="max-h-[600px] overflow-auto"
+        topContent={topContent}
+        topContentPlacement="outside"
       >
-        <TableHeader columns={columns}>
+        <TableHeader columns={headerColumns}>
           {(column) => (
-            <TableColumn 
-              key={column.uid} 
-              align={"start"}
-            >
+            <TableColumn key={column.uid} align={column.uid === "actions" ? "center" : "start"}>
               {column.name}
             </TableColumn>
           )}
         </TableHeader>
         <TableBody
-          items={rows}
+          items={filteredItems}
           isLoading={loading}
           emptyContent="Aucun utilisateur trouvé."
         >
-            {(item : any) => (
-              <TableRow key={item.id}>
-                {(columnKey) => {
-                  if (columnKey === "role") {
-                    return (
-                      <TableCell>
-                        {renderCell(item, columnKey)}
-                      </TableCell>
-                    );
-                  }
-                  return <TableCell>{renderCell(item, columnKey)}</TableCell>;
-                }}
-              </TableRow>
-            )}
-          </TableBody>
+          {(item: any) => (
+            <TableRow key={item.id}>
+              {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
+            </TableRow>
+          )}
+        </TableBody>
       </Table>
-
       <EditModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedUser(null);
         }}
-        onEdit={handleEdit}
+        onEdit={() => {}} // à adapter
         user={selectedUser}
       />
-
       {selectedUser && (
         <DeleteModal
           isOpen={isDeleteModalOpen}
@@ -322,7 +423,7 @@ export default function UsersPage() {
             setIsDeleteModalOpen(false);
             setSelectedUser(null);
           }}
-          onDelete={handleDelete}
+          onDelete={() => {}} // à adapter
           user={selectedUser}
         />
       )}

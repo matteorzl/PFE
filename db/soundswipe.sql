@@ -32,9 +32,9 @@ CREATE TABLE `card` (
   `name` varchar(100) DEFAULT NULL,
   `category_id` int(11) DEFAULT NULL,
   `order_list` int(11) DEFAULT NULL,
-  `sound_file` blob DEFAULT NULL,
-  `draw_animation` blob DEFAULT NULL,
-  `real_animation` blob DEFAULT NULL,
+  `sound_file` longblob DEFAULT NULL,
+  `draw_animation` longblob DEFAULT NULL,
+  `real_animation` longblob DEFAULT NULL,
   `is_validated` tinyint(4) DEFAULT NULL,
   `created_by` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -49,7 +49,7 @@ CREATE TABLE `category` (
   `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `description` varchar(100) DEFAULT NULL,
-  `image` varchar(100) DEFAULT NULL,
+  `image` longblob DEFAULT NULL,
   `created_by` int(11) NOT NULL,
   `followed` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -74,6 +74,21 @@ CREATE TABLE `patient` (
 CREATE TABLE `patient_category` (
   `patient_id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `patient_category`
+--
+CREATE TABLE `patient_card` (
+  `patient_id` int(11) NOT NULL,
+  `card_id` int(11) NOT NULL,
+  `is_validated` TINYINT(1) DEFAULT 0,
+  `validated_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`patient_id`, `card_id`),
+  FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`),
+  FOREIGN KEY (`card_id`) REFERENCES `card` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -110,7 +125,7 @@ CREATE TABLE `users` (
   `firstname` varchar(100) DEFAULT NULL,
   `lastname` varchar(100) DEFAULT NULL,
   `password` varchar(100) DEFAULT NULL,
-  `role` tinyint(4) DEFAULT NULL,
+  `role` varchar(100) DEFAULT NULL,
   `mail` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL

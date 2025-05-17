@@ -13,7 +13,6 @@ export default function DashboardPage() {
           throw new Error("Erreur lors de la récupération du nombre d'utilisateurs");
         }
         const data = await response.json();
-        console.log("Nombre d'utilisateurs :", data.count);
         setUserNumber(data.count);
       } catch (error) {
         console.error("Erreur :", error);

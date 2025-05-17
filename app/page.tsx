@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import Link from "next/link";
@@ -12,6 +12,13 @@ import Cookies from "js-cookie";
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (token) {
+      router.push("/home");
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,8 +38,10 @@ export default function LoginPage() {
         body: JSON.stringify(credentials),
       });
 
+      // Après la connexion réussie
       if (response.ok) {
         const data = await response.json();
+        Cookies.set("token", data.token, { expires: 7 }); // Stocke le token
         const { password, ...userWithoutPassword } = data;
         let userToStore = { ...userWithoutPassword };
 
@@ -58,6 +67,7 @@ export default function LoginPage() {
       setError("Une erreur est survenue. Veuillez réessayer.");
     }
   };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Partie supérieure - Formulaire */}
