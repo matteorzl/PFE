@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input, Textarea, Button } from "@heroui/react";
+import Cookies from "js-cookie"; // Import de js-cookie
 
 export default function CreateSeriesPage() {
   const router = useRouter();
@@ -20,9 +21,22 @@ export default function CreateSeriesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Récupérer l'ID du thérapeute depuis les cookies
+    const therapistCookie = Cookies.get("user");
+    const therapist = therapistCookie ? JSON.parse(therapistCookie) : null;
+    const therapistId = therapist?.therapistId;
+
+    if (!therapistId) {
+      alert("Impossible de récupérer l'ID du thérapeute.");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("description", description);
+    formData.append("therapistId", therapistId); // Ajout de l'ID du thérapeute
     if (file) {
       formData.append("image", file);
     }

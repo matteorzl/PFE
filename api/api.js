@@ -16,6 +16,7 @@ const {
   getCardsByCategory,
   updateCategory,
   getCategoryById,
+  createCategory,
   /*Therapist*/
   getTherapistIdByUserId,
 } = require('../db/db.query');
@@ -165,6 +166,19 @@ app.get('/api/categories/:categoryId/cards', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);
     res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
+  }
+});
+
+app.post('/api/categories', upload.single('image'), async (req, res) => {
+  const { name, description, therapistId } = req.body;
+  const image = req.file ? req.file.buffer : null; // blob
+
+  try {
+    await createCategory(name, description, therapistId,image);
+    res.status(201).json({ message: "Catégorie créée avec succès !" });
+  } catch (err) {
+    console.error("Erreur lors de la création de la catégorie :", err);
+    res.status(500).json({ error: "Erreur lors de la création de la catégorie." });
   }
 });
 

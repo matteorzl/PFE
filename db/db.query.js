@@ -7,12 +7,13 @@ async function createUser(user) {
 
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
+  const role = 'patient';
 
   const query = `
-    INSERT INTO users (firstname, lastname, mail, password, country, city)
-    VALUES (?, ?, ?, ?, ?, ?);
+    INSERT INTO users (firstname, lastname, mail, password, role, country, city)
+    VALUES (?, ?, ?, ?, ?, ?, ?);
   `;
-  const values = [firstname, lastname, email, hashedPassword, country, city];
+  const values = [firstname, lastname, email, hashedPassword, role, country, city];
 
   try {
     const con = await createConnection();
@@ -223,6 +224,24 @@ async function getTherapistIdByUserId(userId) {
   }
 }
 
+async function createCategory(name, description, therapistId, image) {
+  const query = `
+    INSERT INTO category (name, description, image, created_by)
+    VALUES (?, ?, ?, ?);
+  `;
+  const values = [name, description, image, therapistId];
+
+  try {
+    const con = await createConnection();
+    const [result] = await con.execute(query, values);
+    await con.end();
+    return result;
+  } catch (err) {
+    console.error("Erreur lors de l'insertion :", err);
+    throw err;
+  }
+}
+
 
 module.exports = {
   createUser,
@@ -237,4 +256,5 @@ module.exports = {
   getCategoryById,
   getTherapistIdByUserId,
   deleteUser,
+  createCategory,
 };

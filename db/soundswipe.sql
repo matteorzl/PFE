@@ -63,6 +63,7 @@ CREATE TABLE `category` (
 CREATE TABLE `patient` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL
+  `therapist_id` int(11) DEFAULT NULL,	
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -85,10 +86,7 @@ CREATE TABLE `patient_card` (
   `patient_id` int(11) NOT NULL,
   `card_id` int(11) NOT NULL,
   `is_validated` TINYINT(1) DEFAULT 0,
-  `validated_at` DATETIME DEFAULT NULL,
-  PRIMARY KEY (`patient_id`, `card_id`),
-  FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`),
-  FOREIGN KEY (`card_id`) REFERENCES `card` (`id`)
+  `validated_at` DATETIME DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -99,8 +97,7 @@ CREATE TABLE `patient_card` (
 
 CREATE TABLE `therapist` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `patient_id` int(11) DEFAULT NULL
+  `user_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -155,7 +152,8 @@ ALTER TABLE `category`
 --
 ALTER TABLE `patient`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `patient_Users_FK` (`user_id`);
+  ADD KEY `patient_Users_FK` (`user_id`),
+  ADD KEY `therapist_patient_FK` (`therapist_id`);
 
 --
 -- Index pour la table `patient_category`
@@ -169,8 +167,7 @@ ALTER TABLE `patient_category`
 --
 ALTER TABLE `therapist`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `therapist_Users_FK` (`user_id`),
-  ADD KEY `therapist_patient_FK` (`patient_id`);
+  ADD KEY `therapist_Users_FK` (`user_id`);
 
 --
 -- Index pour la table `therapist_category`
@@ -240,7 +237,8 @@ ALTER TABLE `category`
 -- Contraintes pour la table `patient`
 --
 ALTER TABLE `patient`
-  ADD CONSTRAINT `patient_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `patient_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `patient_Users_FK` FOREIGN KEY (`therapist_id`) REFERENCES `therapist` (`id`);
 
 --
 -- Contraintes pour la table `patient_category`
@@ -253,8 +251,14 @@ ALTER TABLE `patient_category`
 -- Contraintes pour la table `therapist`
 --
 ALTER TABLE `therapist`
-  ADD CONSTRAINT `therapist_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `therapist_patient_FK` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`);
+  ADD CONSTRAINT `therapist_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+
+--
+-- Contraintes pour la table `patient_card`
+--
+ALTER TABLE `patient_card`
+  ADD CONSTRAINT `patient_card_card_FK` FOREIGN KEY (`card_id`) REFERENCES `card` (`id`),
+  ADD CONSTRAINT `patient_card_patient_FK` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`);
 
 --
 -- Contraintes pour la table `therapist_category`

@@ -44,12 +44,14 @@ export default function LoginPage() {
         Cookies.set("token", data.token, { expires: 7 }); // Stocke le token
         const { password, ...userWithoutPassword } = data;
         let userToStore = { ...userWithoutPassword };
+        console.log("User data:", userWithoutPassword.user.role);
 
         // Si le user est therapist, récupère son id de therapist
-        if (userWithoutPassword.role === "therapist") {
-          const therapistRes = await fetch(`http://localhost:3001/api/therapist-id/${userWithoutPassword.id}`);
+        if (userWithoutPassword.user.role === "therapist") {
+          const therapistRes = await fetch(`http://localhost:3001/api/therapist-id/${userWithoutPassword.user.id}`);
           if (therapistRes.ok) {
             const { therapistId } = await therapistRes.json();
+            console.log("Therapist ID:", therapistId);
             userToStore.therapistId = therapistId;
           }
         }

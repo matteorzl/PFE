@@ -174,7 +174,12 @@ export default function SeriesPage() {
             {/* Overlay pour lisibilité du texte */}
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-              <h4 className="text-white text-6xl font-bold uppercase text-center drop-shadow-lg">
+              <h4
+                className="text-white font-bold uppercase text-center drop-shadow-lg"
+                style={{
+                  fontSize: "clamp(3vw, 20%, 5vw)", // Taille responsive : minimum 1rem, maximum 2.5rem, 10% de l'espace disponible
+                }}
+              >
                 {category.name}
               </h4>
             </div>

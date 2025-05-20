@@ -3,6 +3,7 @@ import { useNavbar } from "@/context/NavbarContext";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Logo } from "./icons";
 
 export const Sidebar = () => {
   const { setShowNavbar } = useNavbar();
@@ -33,21 +34,14 @@ export const Sidebar = () => {
 
   return (
     <div className="fixed left-0 top-0 h-screen w-64 
-      bg-gradient-to-b from-[#171BF3] via-[#5558FD] to-[#AEB0FE]/80
+      bg-[#171BF3]/90
       backdrop-blur-lg border-r border-white/10
       text-white p-4 z-50 flex flex-col justify-between"
     >
       <div>
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          {user === undefined ? (
-            <span className="text-s font-bold animate-pulse">...</span>
-          ) : (
-            <span className="text-s font-bold">
-              {(realUser.firstname || realUser.lastname)
-                ? `${realUser.firstname ?? ""} ${realUser.lastname ?? ""} - ${realUser.role ?? ""}`.trim() 
-                : ""}
-            </span>
-          )}
+        <div className="flex items-center gap-2 mb-8 ml-4">
+          <Logo size={40}/>
+          <span className="text-xl font-bold">SoundSwipes</span>
         </div>
         <div className="flex flex-col space-y-2 w-full">
           <Link href="/home" className="w-full text-white">
@@ -81,6 +75,18 @@ export const Sidebar = () => {
         </div>
       </div>
       <div>
+        <div className="flex justify-center rounded-lg w-full p-3
+            bg-[#FFFFFF]/70 text-[#171BF3] mb-4">
+          {user === undefined ? (
+            <span className="text-xs font-bold animate-pulse">...</span>
+          ) : (
+            <span className="text-xs capitalize text-center">
+              {(realUser.firstname || realUser.lastname)
+                ? `${realUser.firstname ?? ""} ${realUser.lastname ?? ""} - ${realUser.role ?? ""}`.trim() 
+                : ""}
+            </span>
+          )}
+        </div>
         <button
           onClick={handleLogout}
           className="w-full text-white"

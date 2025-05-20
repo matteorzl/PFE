@@ -3,29 +3,29 @@ SET FOREIGN_KEY_CHECKS=0;
 
 -- Insertion des utilisateurs
 INSERT INTO users (firstname, lastname, password, role, mail, country, city) VALUES 
-('Jean', 'Dupont', '$2b$10$ABC123', 1, 'jean.dupont@email.com', 'France', 'Paris'),
-('Marie', 'Martin', '$2b$10$DEF456', 1, 'marie.martin@email.com', 'France', 'Lyon'),
-('Pierre', 'Bernard', '$2b$10$GHI789', 0, 'pierre.bernard@email.com', 'France', 'Marseille'),
-('Sophie', 'Petit', '$2b$10$JKL012', 0, 'sophie.petit@email.com', 'France', 'Bordeaux');
+('Jean', 'Dupont', '$2b$10$ABC123', 'patient', 'jean.dupont@email.com', 'France', 'Paris'),
+('Marie', 'Martin', '$2b$10$DEF456', 'therapist', 'marie.martin@email.com', 'France', 'Lyon'),
+('Pierre', 'Bernard', '$2b$10$GHI789', 'therapist', 'pierre.bernard@email.com', 'France', 'Marseille'),
+('Sophie', 'Petit', '$2b$10$JKL012', 'patient', 'sophie.petit@email.com', 'France', 'Bordeaux');
 
 -- Insertion des patients (role 0)
 INSERT INTO patient (user_id) 
-SELECT id FROM users WHERE role = 0;
+SELECT id FROM users WHERE role = 'patient';
 
 -- Insertion des thérapeutes (role 1)
 INSERT INTO therapist (user_id) 
-SELECT id FROM users WHERE role = 1;
+SELECT id FROM users WHERE role = 'therapist';
 
 -- Mise à jour des liens thérapeutes-patients
-UPDATE therapist t
-JOIN (SELECT id FROM patient LIMIT 1) p1 ON 1=1
-SET t.patient_id = p1.id
-WHERE t.id = 1;
+UPDATE patient p
+JOIN (SELECT id FROM therapist LIMIT 1) t1 ON 1=1
+SET p.therapist_id = p1.id
+WHERE p.id = 1;
 
-UPDATE therapist t
-JOIN (SELECT id FROM patient WHERE id != (SELECT patient_id FROM therapist WHERE id = 1) LIMIT 1) p2 ON 1=1
-SET t.patient_id = p2.id
-WHERE t.id = 2;
+UPDATE patient p
+JOIN (SELECT id FROM therapist WHERE id != (SELECT therapist_id FROM patient WHERE id = 1) LIMIT 1) t2 ON 1=1
+SET p.therapist_id = p2.id
+WHERE p.id = 2;
 
 -- Insertion des catégories (maintenant avec AUTO_INCREMENT)
 INSERT INTO category (name, description, image, created_by) VALUES 
