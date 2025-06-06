@@ -306,6 +306,24 @@ async function createCategory(name, description, therapistId, image) {
   }
 }
 
+// Fonction pour récupérer toutes les cartes
+async function getAllCards() {
+  const query = `
+    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, order_list
+    FROM card
+  `;
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+    return rows;
+  } catch (err) {
+    console.error("Erreur lors de la récupération des cartes :", err);
+    throw err;
+  }
+}
+
 
 module.exports = {
   createUser,
@@ -315,6 +333,7 @@ module.exports = {
   getUserById,   
   getAllUsers,
   getAllCategories,
+  getAllCards,
   getCardsByCategory,
   deleteCategory,
   updateCategory,

@@ -18,6 +18,8 @@ const {
   getCategoryById,
   createCategory,
   deleteCategory,
+  /*card*/
+  getAllCards,
   /*Therapist*/
   getTherapistIdByUserId,
 } = require('../db/db.query');
@@ -242,5 +244,21 @@ app.get('/api/therapist-id/:userId', async (req, res) => {
     res.json({ therapistId: therapist.id });
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération du therapist" });
+  }
+});
+
+/////////////
+/* CARDS */
+///////////
+
+// Récupérer toutes les cartes
+app.get('/api/cards', async (req, res) => {
+  try {
+    const cards = await getAllCards();
+    console.log("Cartes récupérées :", cards); // Ajoutez ce log
+    res.status(200).json(cards);
+  } catch (err) {
+    console.error("Erreur lors de la récupération des cartes :", err);
+    res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
   }
 });
