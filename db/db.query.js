@@ -89,9 +89,37 @@ async function updateUser(id, firstname, lastname, mail) {
 }
 
 // Supprimer un utilisateur
-const deleteUser = async (userId) => {
+const deleteUser = async (userId,role) => {
   const con = await createConnection();
   try {
+    if (role === 'therapist') {
+      // Récupérer l'id du thérapeute
+      const [therapistId] = await con.query(
+        'SELECT id FROM Therapist WHERE user_id = ?',
+        [userId]
+      );
+      // Supprimer les associations de thérapeute avec les catégories
+      await con.query(
+        'DELETE FROM therapist_category WHERE therapist_id = ?',
+        [therapistId[0].id]
+      );
+      // Supprimer le thérapeute
+      await con.query('DELETE FROM Therapist WHERE user_id = ?', [userId]);
+    }
+    if (role === 'patient') {
+      const [patientid] = await con.query(
+        'SELECT id FROM patient WHERE user_id = ?',
+        [userId]
+      );
+      // Supprimer les associations de patient avec les catégories
+      await con.query(
+        'DELETE FROM patient_category WHERE patient_id = ?',
+        [patientid[0].id]
+      );
+      // Supprimer le patient
+      await con.query('DELETE FROM patient WHERE user_id = ?', [userId]);
+    }
+
     const [result] = await con.query(
       'DELETE FROM users WHERE id = ? RETURNING *',
       [userId]
@@ -157,8 +185,8 @@ async function getAllCategories() {
 
 async function getCardsByCategory(categoryId) {
   const query = `
-    SELECT * FROM card 
-    WHERE category_id = ?
+    SELECT * FROM card
+    WHERE id IN (SELECT card_id FROM card_category WHERE category_id = ?)
     ORDER BY order_list ASC
   `;
 
@@ -224,6 +252,42 @@ async function getTherapistIdByUserId(userId) {
   }
 }
 
+// Supprimer une catégorie
+const deleteCategory = async (categoryId) => {
+  const con = await createConnection();
+  try {
+    // Supprimer les associations de cartes avec la catégorie
+    await con.query(
+      'DELETE FROM card_category WHERE category_id = ?',
+      [categoryId]
+    );
+    // Supprimer les associations de patients avec la catégorie
+    await con.query(
+      'DELETE FROM patient_category WHERE category_id = ?',
+      [categoryId]
+    );
+    // Supprimer les associations de thérapeutes avec la catégorie
+    await con.query(
+      'DELETE FROM therapist_category WHERE category_id = ?',
+      [categoryId]
+    );
+
+    // Supprimer la catégorie
+    const [result] = await con.query(
+      'DELETE FROM category WHERE id = ?',
+      [categoryId]
+    );
+    if (!result || result.affectedRows === 0) {
+      throw new Error('Catégorie non trouvée');
+    }
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    con.end();
+  }
+};
+
 async function createCategory(name, description, therapistId, image) {
   const query = `
     INSERT INTO category (name, description, image, created_by)
@@ -252,6 +316,7 @@ module.exports = {
   getAllUsers,
   getAllCategories,
   getCardsByCategory,
+  deleteCategory,
   updateCategory,
   getCategoryById,
   getTherapistIdByUserId,

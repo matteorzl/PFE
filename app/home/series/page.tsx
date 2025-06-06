@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
+import { EditModal } from "@/components/category/EditModal";
+import { DeleteModal } from "@/components/category/DeleteModal";
+import { CreateModal } from "@/components/category/CreateModal"; // Ajoute cet import
 
 interface Category {
   id: number;
@@ -80,35 +83,48 @@ export const DeleteDocumentIcon = (props: any) => {
 export default function SeriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const[isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Ajoute cet état
   const router = useRouter();
   const iconClasses = "text-xl text-default-500 pointer-events-none flex-shrink-0";
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await fetch("http://localhost:3001/api/categories");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des catégories");
-        }
-        const data = await response.json();
-        setCategories(data);
-      } catch (error) {
-        console.error("Erreur :", error);
-      } finally {
-        setLoading(false);
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/categories");
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des catégories");
       }
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Erreur :", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchCategories();
   }, []);
-
-  if (loading) {
-    return <div>Chargement...</div>;
-  }
 
   const handleCardClick = (categoryId: number, categoryName: string) => {
     const encodedName = encodeURIComponent(categoryName);
     router.push(`/home/series/${categoryId}?name=${encodedName}`);
   };
+
+  const handleDeleteCategory = async (id: number) => {
+    const res = await fetch(`http://localhost:3001/api/category/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+    await fetchCategories(); // Pour rafraîchir la liste après suppression
+  };
+
+  if (loading) {
+    return <div>Chargement...</div>;
+  }
 
   return (
     <div className="gap-4 p-4">
@@ -127,7 +143,7 @@ export default function SeriesPage() {
           color="primary" 
           endContent={<PlusIcon />}
           size="sm"
-          onPress={() => router.push('/home/series/create')}
+          onPress={() => setIsCreateModalOpen(true)} // Ouvre le modal ici
         >
           Creer une série
         </Button>
@@ -156,7 +172,10 @@ export default function SeriesPage() {
                   <DropdownItem
                     key="edit"
                     startContent={<EditDocumentIcon className={iconClasses} />}
-                    onClick={() => router.push(`/home/series/edit/${category.id}`)}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setIsEditModalOpen(true);
+                    }}
                   >
                     Modifier
                   </DropdownItem>
@@ -165,6 +184,10 @@ export default function SeriesPage() {
                     className="text-danger"
                     color="danger"
                     startContent={<DeleteDocumentIcon className={cn(iconClasses, "text-danger")} />}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setIsDeleteModalOpen(true);
+                    }}
                   >
                     Supprimer
                   </DropdownItem>
@@ -190,6 +213,34 @@ export default function SeriesPage() {
           </Card>
         ))}
       </div>
+
+      {/* Ajoute le CreateModal ici */}
+      <CreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={fetchCategories}
+      />
+
+      <EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedCategory(null);
+        }}
+        onEdit={fetchCategories}
+        category={selectedCategory}
+      />
+      {selectedCategory && (
+        <DeleteModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedCategory(null);
+          }}
+          category={selectedCategory}
+          onDelete={handleDeleteCategory}
+        />
+      )}
     </div>
   );
 }
