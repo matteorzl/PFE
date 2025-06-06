@@ -232,7 +232,6 @@ app.get('/api/therapist-id/:userId', async (req, res) => {
 app.get('/api/cards', async (req, res) => {
   try {
     const cards = await getAllCards();
-    console.log("Cartes récupérées :", cards); // Ajoutez ce log
     res.status(200).json(cards);
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);

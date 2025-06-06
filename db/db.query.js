@@ -245,7 +245,7 @@ async function createCategory(name, description, therapistId, image) {
 // Fonction pour récupérer toutes les cartes
 async function getAllCards() {
   const query = `
-    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, order_list
+    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, is_free, order_list
     FROM card
   `;
 
