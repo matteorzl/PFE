@@ -30,13 +30,13 @@ SET time_zone = "+00:00";
 CREATE TABLE `card` (
   `id` int(11) NOT NULL,
   `name` varchar(100) DEFAULT NULL,
-  `category_id` int(11) DEFAULT NULL,
   `order_list` int(11) DEFAULT NULL,
   `sound_file` longblob DEFAULT NULL,
   `draw_animation` longblob DEFAULT NULL,
   `real_animation` longblob DEFAULT NULL,
-  `is_validated` tinyint(4) DEFAULT NULL,
-  `created_by` int(11) NOT NULL
+  `is_validated` tinyint(1) DEFAULT NULL,
+  `is_free` tinyint(1) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -50,9 +50,22 @@ CREATE TABLE `category` (
   `name` varchar(100) NOT NULL,
   `description` varchar(100) DEFAULT NULL,
   `image` longblob DEFAULT NULL,
-  `created_by` int(11) NOT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `difficulty` ENUM('FACILE', 'MOYEN', 'DIFFICILE') DEFAULT NULL,
   `followed` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `card_category`
+--
+
+CREATE TABLE `card_category` (
+  `card_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 -- --------------------------------------------------------
 
@@ -62,8 +75,11 @@ CREATE TABLE `category` (
 
 CREATE TABLE `patient` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL
-  `therapist_id` int(11) DEFAULT NULL,	
+  `user_id` int(11) NOT NULL,
+  `therapist_id` int(11) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `parent_name` varchar(100) DEFAULT NULL,
+  `parent_lastname` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -97,7 +113,9 @@ CREATE TABLE `patient_card` (
 
 CREATE TABLE `therapist` (
   `id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL
+  `user_id` int(11) NOT NULL,
+  `professional_number` varchar(11) DEFAULT NULL,
+  `indentification_type` ENUM('ADELI', 'RPPS') DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -128,6 +146,22 @@ CREATE TABLE `users` (
   `city` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `BILLING`
+--
+
+CREATE TABLE `billing` (
+  `user_id` int(11) NOT NULL,
+  `street` varchar(100) DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `zipcode` varchar(100) DEFAULT NULL,
+  `line1` varchar(100) DEFAULT NULL,
+  `line2` varchar(100) DEFAULT NULL,
+  `phone` varchar(100) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Index pour les tables déchargées
 --
@@ -137,7 +171,6 @@ CREATE TABLE `users` (
 --
 ALTER TABLE `card`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `card_category_FK` (`category_id`),
   ADD KEY `card_therapist_FK` (`created_by`);
 
 --
@@ -146,6 +179,13 @@ ALTER TABLE `card`
 ALTER TABLE `category`
   ADD PRIMARY KEY (`id`),
   ADD KEY `category_therapist_FK` (`created_by`);
+
+--
+-- Index pour la table `card_category`
+--
+ALTER TABLE `card_category`
+  ADD KEY `card_category_card_FK` (`card_id`),
+  ADD KEY `card_category_category_FK` (`category_id`);
 
 --
 -- Index pour la table `patient`
@@ -181,6 +221,12 @@ ALTER TABLE `therapist_category`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Index pour la table `users`
+--
+ALTER TABLE `billing`
+  ADD KEY `billing_user_FK` (`user_id`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -224,7 +270,6 @@ ALTER TABLE `users`
 -- Contraintes pour la table `card`
 --
 ALTER TABLE `card`
-  ADD CONSTRAINT `card_category_FK` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
   ADD CONSTRAINT `card_therapist_FK` FOREIGN KEY (`created_by`) REFERENCES `therapist` (`id`);
 
 --
@@ -234,11 +279,18 @@ ALTER TABLE `category`
   ADD CONSTRAINT `category_therapist_FK` FOREIGN KEY (`created_by`) REFERENCES `therapist` (`id`);
 
 --
+-- Contraintes pour la table `card_category`
+--
+ALTER TABLE `card_category`
+  ADD CONSTRAINT `card_category_category_FK` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
+  ADD CONSTRAINT `card_category_card_FK` FOREIGN KEY (`card_id`) REFERENCES `card` (`id`);
+
+--
 -- Contraintes pour la table `patient`
 --
 ALTER TABLE `patient`
   ADD CONSTRAINT `patient_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `patient_Users_FK` FOREIGN KEY (`therapist_id`) REFERENCES `therapist` (`id`);
+  ADD CONSTRAINT `patient_Therapist_FK` FOREIGN KEY (`therapist_id`) REFERENCES `therapist` (`id`);
 
 --
 -- Contraintes pour la table `patient_category`
@@ -253,6 +305,11 @@ ALTER TABLE `patient_category`
 ALTER TABLE `therapist`
   ADD CONSTRAINT `therapist_Users_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
+--
+-- Contraintes pour la table `billing`
+--
+ALTER TABLE `billing`
+  ADD CONSTRAINT `billing_user_FK` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 --
 -- Contraintes pour la table `patient_card`
 --
