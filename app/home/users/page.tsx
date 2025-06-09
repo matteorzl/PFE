@@ -20,8 +20,8 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import { EditModal } from "@/components/EditModal";
-import { DeleteModal } from "@/components/DeleteModal";
+import { EditModal } from "@/components/user/EditModal";
+import { DeleteModal } from "@/components/user/DeleteModal";
 import Cookies from "js-cookie";
 
 export const PlusIcon = (props: any) => (
@@ -206,6 +206,18 @@ export default function UsersPage() {
   // Recherche et filtres
   const hasSearchFilter = Boolean(filterValue);
 
+  const handleDeleteUser = async (id: string, role: string) => {
+    const res = await fetch(`http://localhost:3001/api/users/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ selectedUser: { role } }),
+    });
+    if (!res.ok) throw new Error("Erreur lors de la suppression");
+    await fetchUsers(); // Pour rafraîchir la liste après suppression
+  };
+
   const headerColumns = useMemo(() => {
     if (visibleColumns === "all") return columns;
     return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
@@ -268,9 +280,7 @@ export default function UsersPage() {
         return cellValue;
     }
   }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
+  const fetchUsers = async () => {
       const token = Cookies.get("token");
       const res = await fetch("http://localhost:3001/api/users", {
         headers: {
@@ -282,6 +292,8 @@ export default function UsersPage() {
         setRows(data);
       }
     };
+
+  useEffect(() => {
     fetchUsers();
   }, []);
 
@@ -423,7 +435,7 @@ export default function UsersPage() {
             setIsDeleteModalOpen(false);
             setSelectedUser(null);
           }}
-          onDelete={() => {}} // à adapter
+          onDelete={() => handleDeleteUser(selectedUser.id, selectedUser.role)}
           user={selectedUser}
         />
       )}

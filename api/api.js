@@ -17,6 +17,7 @@ const {
   updateCategory,
   getCategoryById,
   createCategory,
+  deleteCategory,
   /*card*/
   getAllCards,
   /*Therapist*/
@@ -112,10 +113,11 @@ app.patch('/api/users/:userId', async (req, res) => {
 // Supprimer un utilisateur
 app.delete('/api/users/:id', async (req, res) => {
   const userId = req.params.id;
+  const role = req.body.selectedUser?.role;
 
   try {
-    const deletedUser = await deleteUser(userId);
-    res.status(200).json({ 
+    const deletedUser = await deleteUser(userId, role);
+    res.status(200).json({
       message: "Utilisateur supprimé avec succès",
       user: deletedUser 
     });
@@ -173,10 +175,11 @@ app.get('/api/categories/:categoryId/cards', async (req, res) => {
 
 app.post('/api/categories', upload.single('image'), async (req, res) => {
   const { name, description, therapistId } = req.body;
-  const image = req.file ? req.file.buffer : null; // blob
+  const safeTherapistId = therapistId ? therapistId : null;
+  const image = req.file ? req.file.buffer : null;
 
   try {
-    await createCategory(name, description, therapistId,image);
+    await createCategory(name, description, safeTherapistId, image);
     res.status(201).json({ message: "Catégorie créée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la création de la catégorie :", err);
@@ -209,6 +212,26 @@ app.get('/api/categories/edit/:categoryId', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération de la série :", err);
     res.status(500).json({ error: "Erreur lors de la récupération de la série." });
+  }
+});
+
+// Supprimer une catégorie
+app.delete('/api/category/:id', async (req, res) => {
+  const categoryId = req.params.id;
+
+  try {
+    const deletedCategory = await deleteCategory(categoryId);
+    res.status(200).json({
+      message: "Catégorie supprimée avec succès",
+      category: deletedCategory
+    });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de la catégorie :", err);
+    if (err.message === 'Catégorie non trouvée') {
+      res.status(404).json({ error: "Catégorie non trouvée." });
+    } else {
+      res.status(500).json({ error: "Erreur lors de la suppression de la catégorie." });
+    }
   }
 });
 
