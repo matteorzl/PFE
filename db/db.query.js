@@ -324,21 +324,87 @@ async function getAllCards() {
   }
 }
 
+// Récupérer l'image d'une carte
+async function getCardImage(cardId) {
+  const query = 'SELECT draw_animation FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.draw_animation || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'image :", err);
+    throw err;
+  }
+}
+
+// Récupérer l'animation réelle d'une carte
+async function getCardAnimation(cardId) {
+  const query = 'SELECT real_animation FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.real_animation || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l\'animation :", err);
+    throw err;
+  }
+}
+
+// Récupérer le son d'une carte
+async function getCardSound(cardId) {
+  const query = 'SELECT sound_file FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.sound_file || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération du son :", err);
+    throw err;
+  }
+}
+
+// Créer une nouvelle carte
+async function createCard(name, is_free, draw_animation, real_animation, sound_file) {
+  const query = `
+    INSERT INTO card (name, is_free, draw_animation, real_animation, sound_file, is_validated, order_list)
+    VALUES (?, ?, ?, ?, ?, 0, 1)
+  `;
+  const values = [name, is_free === "1" ? 1 : 0, draw_animation, real_animation, sound_file];
+
+  try {
+    const con = await createConnection();
+    const [result] = await con.execute(query, values);
+    await con.end();
+    return result;
+  } catch (err) {
+    console.error("Erreur lors de la création de la carte :", err);
+    throw err;
+  }
+}
 
 module.exports = {
   createUser,
+  updateUser,
   loginUser,
   getUsersNumber,
-  updateUser,
   getUserById,   
   getAllUsers,
-  getAllCategories,
-  getAllCards,
-  getCardsByCategory,
-  deleteCategory,
-  updateCategory,
-  getCategoryById,
   getTherapistIdByUserId,
   deleteUser,
+
+  getAllCategories,
+  getCategoryById,
+  deleteCategory,
+  updateCategory,
   createCategory,
+
+  getAllCards,
+  getCardImage,
+  getCardAnimation,
+  getCardSound,
+  createCard,
+  getCardsByCategory,
 };

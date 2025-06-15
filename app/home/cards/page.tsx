@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Slider, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import CreateModal from "@/components/card/CreateModal";
 
 interface CardItem {
   id: number;
@@ -24,16 +25,14 @@ export const PlusIcon = (props: any) => (
   </svg>
 );
 
-export const ChevronDownIcon = () => {
-    return (
-      <svg fill="none" height="14" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg">
-        <path
-          d="M17.9188 8.17969H11.6888H6.07877C5.11877 8.17969 4.63877 9.33969 5.31877 10.0197L10.4988 15.1997C11.3288 16.0297 12.6788 16.0297 13.5088 15.1997L15.4788 13.2297L18.6888 10.0197C19.3588 9.33969 18.8788 8.17969 17.9188 8.17969Z"
-          fill="currentColor"
-        />
-      </svg>
-    );
-  };
+export const ChevronDownIcon = () => (
+  <svg fill="none" height="14" viewBox="0 0 24 24" width="14" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M17.9188 8.17969H11.6888H6.07877C5.11877 8.17969 4.63877 9.33969 5.31877 10.0197L10.4988 15.1997C11.3288 16.0297 12.6788 16.0297 13.5088 15.1997L15.4788 13.2297L18.6888 10.0197C19.3588 9.33969 18.8788 8.17969 17.9188 8.17969Z"
+      fill="currentColor"
+    />
+  </svg>
+);
 
 export const EditDocumentIcon = (props: any) => (
   <svg
@@ -87,30 +86,49 @@ export const DeleteDocumentIcon = (props: any) => (
   </svg>
 );
 
+const ImageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+  </svg>
+);
+
+const GifIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12.75 8.25v7.5m6-7.5h-3V12m0 0v3.75m0-3.75H18M9.75 9.348c-1.03-1.464-2.698-1.464-3.728 0-1.03 1.465-1.03 3.84 0 5.304 1.03 1.464 2.699 1.464 3.728 0V12h-1.5M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+  </svg>
+);
+
 export default function CardsPage() {
   const [cards, setCards] = useState<CardItem[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [filteredCards, setFilteredCards] = useState<CardItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [tabsState, setTabsState] = useState<{ [cardId: number]: "image" | "gif" }>({});
   const router = useRouter();
 
-  useEffect(() => {
-    async function fetchCards() {
-      try {
-        const response = await fetch("http://localhost:3001/api/cards");
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des cartes");
-        }
-        const data = await response.json();
-        setCards(data);
-        setFilteredCards(data); // Initialisation des cartes filtrées
-      } catch (error) {
-        console.error("Erreur :", error);
-      } finally {
-        setLoading(false);
-      }
+  const fetchCards = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:3001/api/cards");
+      const data = await response.json();
+      setCards(data);
+      setFilteredCards(data);
+      // Initialise le tab sur "image" pour chaque carte
+      const initialTabs: { [cardId: number]: "image" | "gif" } = {};
+      data.forEach((card: CardItem) => {
+        initialTabs[card.id] = "image";
+      });
+      setTabsState(initialTabs);
+    } catch (error) {
+      console.error("Erreur :", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchCards();
   }, []);
 
@@ -138,6 +156,10 @@ export default function CardsPage() {
     setFilteredCards(filtered);
   }, [searchValue, filterStatus, cards]);
 
+  const handleTabClick = (cardId: number, tab: "image" | "gif") => {
+    setTabsState((prev) => ({ ...prev, [cardId]: tab }));
+  };
+
   if (loading) {
     return <div>Chargement...</div>;
   }
@@ -156,7 +178,7 @@ export default function CardsPage() {
           color="primary" 
           endContent={<PlusIcon />}
           size="sm"
-          onPress={() => router.push('/home/cards/create')}
+          onPress={() => setIsCreateModalOpen(true)}
         >
           Créer une carte
         </Button>
@@ -170,36 +192,36 @@ export default function CardsPage() {
           className="w-full max-w-md"
         />
         <Dropdown>
-            <DropdownTrigger>
+          <DropdownTrigger>
             <Button variant="bordered" className="ml-4">
-                {filterStatus === "all"
+              {filterStatus === "all"
                 ? "Tous"
                 : filterStatus === "validated"
                 ? "Validé"
                 : filterStatus === "pending"
                 ? "En attente"
                 : "Refusé"}
-                <ChevronDownIcon />
+              <ChevronDownIcon />
             </Button>
-            </DropdownTrigger>
-            <DropdownMenu>
+          </DropdownTrigger>
+          <DropdownMenu>
             <DropdownItem key="all" onClick={() => setFilterStatus("all")}>
-                Tous
+              Tous
             </DropdownItem>
             <DropdownItem key="validated" onClick={() => setFilterStatus("validated")}>
-                Validé
+              Validé
             </DropdownItem>
             <DropdownItem key="pending" onClick={() => setFilterStatus("pending")}>
-                En attente
+              En attente
             </DropdownItem>
             <DropdownItem key="rejected" onClick={() => setFilterStatus("rejected")}>
-                Refusé
+              Refusé
             </DropdownItem>
-            </DropdownMenu>
+          </DropdownMenu>
         </Dropdown>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredCards.map((card) => (
           <Card
             key={card.id}
@@ -235,15 +257,37 @@ export default function CardsPage() {
 
             <CardBody>
               <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
-                <div className="relative col-span-6 md:col-span-4">
+                <div className="relative col-span-6 md:col-span-4 flex flex-col items-center">
                   <Image
                     alt={`Image de ${card.name}`}
                     className="object-cover"
                     height={150}
                     shadow="md"
-                    src="/placeholder-image.png"
+                    src={
+                      tabsState[card.id] === "gif"
+                        ? `http://localhost:3001/api/cards/${card.id}/animation`
+                        : `http://localhost:3001/api/cards/${card.id}/image`
+                    }
                     width="100%"
                   />
+                  <div className="flex gap-2 mt-2 justify-center">
+                    <button
+                      type="button"
+                      className={`p-2 rounded-full border ${tabsState[card.id] !== "gif" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
+                      title="Voir l'image"
+                      onClick={() => handleTabClick(card.id, "image")}
+                    >
+                      <ImageIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className={`p-2 rounded-full border ${tabsState[card.id] === "gif" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
+                      title="Voir le GIF"
+                      onClick={() => handleTabClick(card.id, "gif")}
+                    >
+                      <GifIcon />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex flex-col col-span-6 md:col-span-8">
@@ -269,7 +313,7 @@ export default function CardsPage() {
                             </svg>
                           </div>
                         ) : card.is_validated === false ? (
-                          <div className="ml-2" title="Refusé par l'administrateur">
+                          <div title="Refusé par l'administrateur">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -286,7 +330,7 @@ export default function CardsPage() {
                             </svg>
                           </div>
                         ) : (
-                          <div className="ml-2" title="En attente de validation par l'administrateur">
+                          <div title="En attente de validation par l'administrateur">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -306,74 +350,41 @@ export default function CardsPage() {
                       </div>
                       <div className="flex items-center gap-2 py-2 text-small text-foreground/80">
                         {card.is_free ? (
-                            <div
+                          <div
                             className="flex items-center gap-2 px-4 py-2 border-2 border-green-500 rounded-full text-green-500 font-bold text-sm"
                             title="Gratuit"
-                            >
+                          >
                             <span>Gratuit</span>
-                            </div>
+                          </div>
                         ) : (
-                            <div
+                          <div
                             className="flex items-center gap-2 px-4 py-2 border-2 border-yellow-500 rounded-full text-yellow-500 font-bold text-sm"
                             title="Premium"
-                            >
+                          >
                             <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                viewBox="0 0 64 64"
-                                className="w-6 h-6 text-yellow-500"
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 64 64"
+                              className="w-6 h-6 text-yellow-500"
                             >
-                                <path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
-                                <rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
-                                <circle cx="8" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
-                                <circle cx="32" cy="20" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
-                                <circle cx="56" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+                              <path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
+                              <rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
+                              <circle cx="8" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+                              <circle cx="32" cy="20" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+                              <circle cx="56" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
                             </svg>
                             <span>Premium</span>
-                            </div>
+                          </div>
                         )}
-                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col mt-3 gap-1">
-                    <Slider
-                      aria-label="Progression audio"
-                      classNames={{
-                        track: "bg-default-500/30",
-                        thumb: "w-2 h-2 after:w-2 after:h-2 after:bg-foreground",
-                      }}
-                      color="foreground"
-                      defaultValue={0}
-                      size="sm"
+                  <div className="flex flex-col mt-3 gap-2">
+                    <audio
+                      controls
+                      className="w-full rounded-lg bg-white/80 shadow-md ring-1 ring-inset ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                      src={`http://localhost:3001/api/cards/${card.id}/sound`}
                     />
-                    <div className="flex justify-between">
-                      <p className="text-small">0:00</p>
-                      <p className="text-small text-foreground/50">Durée</p>
-                    </div>
-                  </div>
-
-                  <div className="flex w-full items-center justify-center mt-4">
-                    <Button
-                      isIconOnly
-                      className="data-[hover]:bg-foreground/10"
-                      radius="full"
-                      variant="light"
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="w-6 h-6 text-foreground/80"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M8.25 4.5v15l11-7.5-11-7.5z"
-                        />
-                      </svg>
-                    </Button>
                   </div>
                 </div>
               </div>
@@ -381,6 +392,11 @@ export default function CardsPage() {
           </Card>
         ))}
       </div>
+      <CreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={fetchCards}
+      />
     </div>
   );
 }

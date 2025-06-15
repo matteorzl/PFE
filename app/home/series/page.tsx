@@ -143,9 +143,9 @@ export default function SeriesPage() {
           color="primary" 
           endContent={<PlusIcon />}
           size="sm"
-          onPress={() => setIsCreateModalOpen(true)} // Ouvre le modal ici
+          onPress={() => setIsCreateModalOpen(true)}
         >
-          Creer une série
+          Créer une série
         </Button>
       </h1>
       
@@ -206,7 +206,6 @@ export default function SeriesPage() {
                 {category.name}
               </h4>
             </div>
-            {/* Description en bas si tu veux la garder */}
             <CardFooter className="flex flex-col items-center relative z-10">
               <p className="text-medium text-white">{category.description}</p>
             </CardFooter>
@@ -214,7 +213,6 @@ export default function SeriesPage() {
         ))}
       </div>
 
-      {/* Ajoute le CreateModal ici */}
       <CreateModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
