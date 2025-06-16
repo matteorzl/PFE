@@ -55,7 +55,7 @@ const cards = [
     is_validated: 1,
     is_free: 1,
     created_by: 1,
-    sound_file: 'chat.mp3',
+    sound_file: 'cat.mp3',
     draw_animation: 'cat.jpg',
     real_animation: 'cat.gif'
   },
@@ -65,7 +65,7 @@ const cards = [
     is_validated: 1,
     is_free: 0,
     created_by: 1,
-    sound_file: 'chien.mp3',
+    sound_file: 'dog.mp3',
     draw_animation: 'dog.jpg',
     real_animation: 'dog.gif'
   },
@@ -75,7 +75,7 @@ const cards = [
     is_validated: 1,
     is_free: 1,
     created_by: 1,
-    sound_file: 'voiture.mp3',
+    sound_file: 'car.mp3',
     draw_animation: 'car.jpg',
     real_animation: 'car.gif'
   },
@@ -95,7 +95,7 @@ const cards = [
     is_validated: 1,
     is_free: 1,
     created_by: 2,
-    sound_file: 'pluie.mp3',
+    sound_file: 'rain.mp3',
     draw_animation: 'rain.jpeg',
     real_animation: 'rain.gif'
   },
@@ -105,7 +105,7 @@ const cards = [
     is_validated: 1,
     is_free: 0,
     created_by: 2,
-    sound_file: 'vent.mp3',
+    sound_file: 'wind.mp3',
     draw_animation: 'wind.jpg',
     real_animation: 'wind.gif'
   },
@@ -125,7 +125,7 @@ const cards = [
     is_validated: 1,
     is_free: 0,
     created_by: 2,
-    sound_file: 'guitare.mp3',
+    sound_file: 'guitar.mp3',
     draw_animation: 'guitar.webp',
     real_animation: 'guitar.gif'
   }
@@ -254,9 +254,9 @@ async function main() {
   // On suppose que created_by dans cards = 1 => therapistIds[0], 2 => therapistIds[1]
   const cardIds = [];
   for (const card of cards) {
-    const soundPath = path.join(__dirname, 'seeder\\image', card.sound_file);
-    const drawPath = path.join(__dirname, 'seeder\\image', card.draw_animation);
-    const realPath = path.join(__dirname, 'seeder\\image', card.real_animation);
+    const soundPath = path.join(__dirname, 'seeder', 'audio', card.sound_file);
+    const drawPath = path.join(__dirname, 'seeder', 'image', card.draw_animation);
+    const realPath = path.join(__dirname, 'seeder', 'image', card.real_animation);
 
     const soundBuffer = fs.existsSync(soundPath) ? fs.readFileSync(soundPath) : null;
     const drawBuffer = fs.existsSync(drawPath) ? fs.readFileSync(drawPath) : null;
