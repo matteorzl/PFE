@@ -8,6 +8,7 @@ const {
   createUser,
   loginUser,
   getUsersNumber,
+  getUsersEvolution,
   getAllUsers,
   updateUser,
   deleteUser, 
@@ -100,6 +101,16 @@ app.get('/api/users/number', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
     res.status(500).json({ error: "Erreur lors de la récupération du nombre d'utilisateurs." });
+  }
+});
+
+// Récupérer l'évolution des utilisateurs
+app.get('/api/users/evolution', async (req, res) => {
+  try {
+    const data = await getUsersEvolution();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération de l'évolution des utilisateurs." });
   }
 });
 

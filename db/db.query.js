@@ -55,6 +55,7 @@ async function loginUser(email, password) {
   }
 }
 
+// Récupérer le nombre total d'utilisateurs
 async function getUsersNumber() {
   const query = `SELECT COUNT(*) AS count FROM users`;
 
@@ -65,6 +66,33 @@ async function getUsersNumber() {
     return rows[0].count;
   } catch (err) {
     console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
+    throw err;
+  }
+}
+
+// Récupérer l'évolution du nombre d'utilisateurs dans le temps
+async function getUsersEvolution() {
+  const query = `
+    SELECT DATE(created_at) as date, COUNT(*) as count
+    FROM users
+    GROUP BY DATE(created_at)
+    ORDER BY DATE(created_at)
+  `;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+
+    // Calcul du cumul pour chaque jour
+    let total = 0;
+    const cumulative = rows.map(row => {
+      total += row.count;
+      return { date: row.date, count: total };
+    });
+
+    return cumulative;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'évolution des utilisateurs :", err);
     throw err;
   }
 }
@@ -451,6 +479,7 @@ module.exports = {
   deleteUser,
   loginUser,
   getUsersNumber,
+  getUsersEvolution,
   getUserById,   
   getAllUsers,
   getTherapistIdByUserId,
