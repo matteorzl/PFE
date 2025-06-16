@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
+import { Spinner, Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
 import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
 import { CreateModal } from "@/components/category/CreateModal"; // Ajoute cet import
@@ -123,7 +123,11 @@ export default function SeriesPage() {
   };
 
   if (loading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg"/>
+      </div>
+    );
   }
 
   return (

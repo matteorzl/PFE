@@ -24,6 +24,8 @@ const {
   getCardAnimation,
   getCardSound,
   createCard,
+  updateCard,
+  deleteCard,
   /*Therapist*/
   getTherapistIdByUserId,
 } = require('../db/db.query');
@@ -327,5 +329,51 @@ app.post('/api/cards', upload.fields([
   } catch (err) {
     console.error("Erreur lors de la création de la carte :", err);
     res.status(500).json({ error: "Erreur lors de la création de la carte." });
+  }
+});
+
+// Modifier une carte
+app.put('/api/cards/:id', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'draw_animation', maxCount: 1 },
+  { name: 'sound_file', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { name, is_free } = req.body;
+    const cardId = req.params.id;
+
+    // Récupère les fichiers si présents
+    const draw_animation = req.files['image']?.[0]?.buffer;
+    const real_animation = req.files['draw_animation']?.[0]?.buffer;
+    const sound_file = req.files['sound_file']?.[0]?.buffer;
+
+    await updateCard(
+      cardId,
+      name,
+      is_free,
+      draw_animation,
+      real_animation,
+      sound_file
+    );
+    res.status(200).json({ message: "Carte modifiée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    res.status(500).json({ error: "Erreur lors de la modification de la carte." });
+  }
+});
+
+// Supprimer une carte
+app.delete('/api/cards/:id', async (req, res) => {
+  const cardId = req.params.id;
+  try {
+    await deleteCard(cardId);
+    res.status(200).json({ message: "Carte supprimée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de la carte :", err);
+    if (err.message === 'Carte non trouvée') {
+      res.status(404).json({ error: "Carte non trouvée." });
+    } else {
+      res.status(500).json({ error: "Erreur lors de la suppression de la carte." });
+    }
   }
 });

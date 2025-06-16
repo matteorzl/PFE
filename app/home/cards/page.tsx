@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { Spinner, Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import CreateModal from "@/components/card/CreateModal";
+import { EditModal } from "@/components/card/EditModal";
+import { DeleteModal } from "@/components/card/DeleteModal";
 
 interface CardItem {
   id: number;
@@ -101,6 +103,10 @@ const GifIcon = () => (
 export default function CardsPage() {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [cardToEdit, setCardToEdit] = useState<CardItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<CardItem | null>(null);
   const [filteredCards, setFilteredCards] = useState<CardItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -160,8 +166,31 @@ export default function CardsPage() {
     setTabsState((prev) => ({ ...prev, [cardId]: tab }));
   };
 
+  const handleEditClick = (card: CardItem) => {
+    setCardToEdit(card);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCardEdited = async () => {
+    await fetchCards();
+  };
+
+  const handleDeleteClick = (card: CardItem) => {
+    setCardToDelete(card);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCardDeleted = async (id: number) => {
+    await fetch(`http://localhost:3001/api/cards/${id}`, { method: "DELETE" });
+    await fetchCards();
+  };
+
   if (loading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg"/>
+      </div>
+    );
   }
 
   return (
@@ -239,7 +268,7 @@ export default function CardsPage() {
                   <DropdownItem
                     key="edit"
                     startContent={<EditDocumentIcon />}
-                    onClick={() => router.push(`/home/cards/edit/${card.id}`)}
+                    onClick={() => handleEditClick(card)}
                   >
                     Modifier
                   </DropdownItem>
@@ -248,9 +277,10 @@ export default function CardsPage() {
                     className="text-danger"
                     color="danger"
                     startContent={<DeleteDocumentIcon />}
+                    onClick={() => handleDeleteClick(card)}
                   >
                     Supprimer
-                  </DropdownItem>
+                </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -396,6 +426,18 @@ export default function CardsPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={fetchCards}
+      />
+      <EditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onEdit={handleCardEdited}
+        card={cardToEdit}
+      />
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        card={cardToDelete}
+        onDelete={handleCardDeleted}
       />
     </div>
   );

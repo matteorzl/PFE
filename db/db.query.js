@@ -385,15 +385,75 @@ async function createCard(name, is_free, draw_animation, real_animation, sound_f
   }
 }
 
+// Mettre à jour une carte
+async function updateCard(id, name, is_free, draw_animation, real_animation, sound_file) {
+  let fields = [];
+  let values = [];
+
+  if (name !== undefined) {
+    fields.push('name = ?');
+    values.push(name);
+  }
+  if (is_free !== undefined) {
+    fields.push('is_free = ?');
+    values.push(is_free === "1" || is_free === 1 ? 1 : 0);
+  }
+  if (draw_animation !== undefined) {
+    fields.push('draw_animation = ?');
+    values.push(draw_animation);
+  }
+  if (real_animation !== undefined) {
+    fields.push('real_animation = ?');
+    values.push(real_animation);
+  }
+  if (sound_file !== undefined) {
+    fields.push('sound_file = ?');
+    values.push(sound_file);
+  }
+
+  if (fields.length === 0) return;
+
+  const query = `UPDATE card SET ${fields.join(', ')} WHERE id = ?`;
+  values.push(id);
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    throw err;
+  }
+}
+
+// Supprimer une carte
+async function deleteCard(cardId) {
+  const con = await createConnection();
+  try {
+    // Supprimer les associations éventuelles (ex: card_category)
+    await con.query('DELETE FROM card_category WHERE card_id = ?', [cardId]);
+    // Supprimer la carte
+    const [result] = await con.query('DELETE FROM card WHERE id = ?', [cardId]);
+    if (!result || result.affectedRows === 0) {
+      throw new Error('Carte non trouvée');
+    }
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    await con.end();
+  }
+}
+
 module.exports = {
   createUser,
   updateUser,
+  deleteUser,
   loginUser,
   getUsersNumber,
   getUserById,   
   getAllUsers,
   getTherapistIdByUserId,
-  deleteUser,
 
   getAllCategories,
   getCategoryById,
@@ -402,9 +462,11 @@ module.exports = {
   createCategory,
 
   getAllCards,
+  getCardsByCategory,
   getCardImage,
   getCardAnimation,
   getCardSound,
   createCard,
-  getCardsByCategory,
+  updateCard,
+  deleteCard,
 };
