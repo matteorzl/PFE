@@ -36,7 +36,9 @@ CREATE TABLE `card` (
   `real_animation` longblob DEFAULT NULL,
   `is_validated` tinyint(1) DEFAULT NULL,
   `is_free` tinyint(1) DEFAULT NULL,
-  `created_by` int(11) DEFAULT NULL
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -52,7 +54,9 @@ CREATE TABLE `category` (
   `image` longblob DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
   `difficulty` ENUM('FACILE', 'MOYEN', 'DIFFICILE') DEFAULT NULL,
-  `followed` int(11) DEFAULT NULL
+  `followed` int(11) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -63,7 +67,9 @@ CREATE TABLE `category` (
 
 CREATE TABLE `card_category` (
   `card_id` int(11) NOT NULL,
-  `category_id` int(11) NOT NULL
+  `category_id` int(11) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
@@ -79,7 +85,9 @@ CREATE TABLE `patient` (
   `therapist_id` int(11) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL,
   `parent_name` varchar(100) DEFAULT NULL,
-  `parent_lastname` varchar(20) DEFAULT NULL
+  `parent_lastname` varchar(20) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -90,7 +98,9 @@ CREATE TABLE `patient` (
 
 CREATE TABLE `patient_category` (
   `patient_id` int(11) NOT NULL,
-  `category_id` int(11) NOT NULL
+  `category_id` int(11) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -102,7 +112,9 @@ CREATE TABLE `patient_card` (
   `patient_id` int(11) NOT NULL,
   `card_id` int(11) NOT NULL,
   `is_validated` TINYINT(1) DEFAULT 0,
-  `validated_at` DATETIME DEFAULT NULL
+  `validated_at` DATETIME DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -115,7 +127,9 @@ CREATE TABLE `therapist` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `professional_number` varchar(11) DEFAULT NULL,
-  `indentification_type` ENUM('ADELI', 'RPPS') DEFAULT NULL
+  `indentification_type` ENUM('ADELI', 'RPPS') DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -126,7 +140,9 @@ CREATE TABLE `therapist` (
 
 CREATE TABLE `therapist_category` (
   `therapist_id` int(11) NOT NULL,
-  `category_id` int(11) NOT NULL
+  `category_id` int(11) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -143,7 +159,9 @@ CREATE TABLE `users` (
   `role` varchar(100) DEFAULT NULL,
   `mail` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
-  `city` varchar(100) DEFAULT NULL
+  `city` varchar(100) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -159,7 +177,9 @@ CREATE TABLE `billing` (
   `zipcode` varchar(100) DEFAULT NULL,
   `line1` varchar(100) DEFAULT NULL,
   `line2` varchar(100) DEFAULT NULL,
-  `phone` varchar(100) DEFAULT NULL
+  `phone` varchar(100) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

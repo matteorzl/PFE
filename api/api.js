@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const upload = multer(); // stockage en mémoire
+const upload = multer();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { 
@@ -8,6 +8,7 @@ const {
   createUser,
   loginUser,
   getUsersNumber,
+  getUsersEvolution,
   getAllUsers,
   updateUser,
   deleteUser, 
@@ -20,6 +21,12 @@ const {
   deleteCategory,
   /*card*/
   getAllCards,
+  getCardImage,
+  getCardAnimation,
+  getCardSound,
+  createCard,
+  updateCard,
+  deleteCard,
   /*Therapist*/
   getTherapistIdByUserId,
 } = require('../db/db.query');
@@ -94,6 +101,16 @@ app.get('/api/users/number', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
     res.status(500).json({ error: "Erreur lors de la récupération du nombre d'utilisateurs." });
+  }
+});
+
+// Récupérer l'évolution des utilisateurs
+app.get('/api/users/evolution', async (req, res) => {
+  try {
+    const data = await getUsersEvolution();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération de l'évolution des utilisateurs." });
   }
 });
 
@@ -173,6 +190,7 @@ app.get('/api/categories/:categoryId/cards', async (req, res) => {
   }
 });
 
+// Créer une nouvelle catégorie
 app.post('/api/categories', upload.single('image'), async (req, res) => {
   const { name, description, therapistId } = req.body;
   const safeTherapistId = therapistId ? therapistId : null;
@@ -259,5 +277,114 @@ app.get('/api/cards', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);
     res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
+  }
+});
+
+// Pour l'image
+app.get('/api/cards/:id/image', async (req, res) => {
+  try {
+    const image = await getCardImage(req.params.id);
+    if (!image) return res.sendStatus(404);
+    res.set('Content-Type', 'image/png');
+    res.send(image);
+  } catch (err) {
+    console.error("Erreur :", err);
+    res.sendStatus(500);
+  }
+});
+
+// Pour l'animation GIF
+app.get('/api/cards/:id/animation', async (req, res) => {
+  try {
+    const animation = await getCardAnimation(req.params.id);
+    if (!animation) return res.sendStatus(404);
+    res.set('Content-Type', 'image/gif');
+    res.send(animation);
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'animation :", err);
+    res.sendStatus(500);
+  }
+});
+
+// Pour le son
+app.get('/api/cards/:id/sound', async (req, res) => {
+  try {
+    const sound = await getCardSound(req.params.id);
+    if (!sound) return res.sendStatus(404);
+    res.set('Content-Type', 'audio/mpeg');
+    res.send(sound);
+  } catch (err) {
+    console.error("Erreur :", err);
+    res.sendStatus(500);
+  }
+});
+
+// Créer une nouvelle carte
+app.post('/api/cards', upload.fields([
+  { name: 'image', maxCount: 1 },           // PNG/JPG
+  { name: 'draw_animation', maxCount: 1 },  // GIF
+  { name: 'sound_file', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { name, is_free } = req.body;
+    const draw_animation = req.files['image']?.[0]?.buffer || null; // PNG/JPG
+    const real_animation = req.files['draw_animation']?.[0]?.buffer || null; // GIF
+    const sound_file = req.files['sound_file']?.[0]?.buffer || null;
+
+    if (!name || !draw_animation || !real_animation || !sound_file) {
+      return res.status(400).json({ error: "Tous les champs sont obligatoires." });
+    }
+
+    await createCard(name, is_free, draw_animation, real_animation, sound_file);
+    res.status(201).json({ message: "Carte créée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la création de la carte :", err);
+    res.status(500).json({ error: "Erreur lors de la création de la carte." });
+  }
+});
+
+// Modifier une carte
+app.put('/api/cards/:id', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'draw_animation', maxCount: 1 },
+  { name: 'sound_file', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { name, is_free } = req.body;
+    const cardId = req.params.id;
+
+    // Récupère les fichiers si présents
+    const draw_animation = req.files['image']?.[0]?.buffer;
+    const real_animation = req.files['draw_animation']?.[0]?.buffer;
+    const sound_file = req.files['sound_file']?.[0]?.buffer;
+
+    await updateCard(
+      cardId,
+      name,
+      is_free,
+      draw_animation,
+      real_animation,
+      sound_file
+    );
+    res.status(200).json({ message: "Carte modifiée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    res.status(500).json({ error: "Erreur lors de la modification de la carte." });
+  }
+});
+
+// Supprimer une carte
+app.delete('/api/cards/:id', async (req, res) => {
+  const cardId = req.params.id;
+  try {
+    await deleteCard(cardId);
+    res.status(200).json({ message: "Carte supprimée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la suppression de la carte :", err);
+    if (err.message === 'Carte non trouvée') {
+      res.status(404).json({ error: "Carte non trouvée." });
+    } else {
+      res.status(500).json({ error: "Erreur lors de la suppression de la carte." });
+    }
   }
 });

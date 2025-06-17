@@ -55,6 +55,7 @@ async function loginUser(email, password) {
   }
 }
 
+// Récupérer le nombre total d'utilisateurs
 async function getUsersNumber() {
   const query = `SELECT COUNT(*) AS count FROM users`;
 
@@ -65,6 +66,33 @@ async function getUsersNumber() {
     return rows[0].count;
   } catch (err) {
     console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
+    throw err;
+  }
+}
+
+// Récupérer l'évolution du nombre d'utilisateurs dans le temps
+async function getUsersEvolution() {
+  const query = `
+    SELECT DATE(created_at) as date, COUNT(*) as count
+    FROM users
+    GROUP BY DATE(created_at)
+    ORDER BY DATE(created_at)
+  `;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+
+    // Calcul du cumul pour chaque jour
+    let total = 0;
+    const cumulative = rows.map(row => {
+      total += row.count;
+      return { date: row.date, count: total };
+    });
+
+    return cumulative;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'évolution des utilisateurs :", err);
     throw err;
   }
 }
@@ -324,21 +352,150 @@ async function getAllCards() {
   }
 }
 
+// Récupérer l'image d'une carte
+async function getCardImage(cardId) {
+  const query = 'SELECT draw_animation FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.draw_animation || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'image :", err);
+    throw err;
+  }
+}
+
+// Récupérer l'animation réelle d'une carte
+async function getCardAnimation(cardId) {
+  const query = 'SELECT real_animation FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.real_animation || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l\'animation :", err);
+    throw err;
+  }
+}
+
+// Récupérer le son d'une carte
+async function getCardSound(cardId) {
+  const query = 'SELECT sound_file FROM card WHERE id = ?';
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [cardId]);
+    await con.end();
+    return rows[0]?.sound_file || null;
+  } catch (err) {
+    console.error("Erreur lors de la récupération du son :", err);
+    throw err;
+  }
+}
+
+// Créer une nouvelle carte
+async function createCard(name, is_free, draw_animation, real_animation, sound_file) {
+  const query = `
+    INSERT INTO card (name, is_free, draw_animation, real_animation, sound_file, is_validated, order_list)
+    VALUES (?, ?, ?, ?, ?, 0, 1)
+  `;
+  const values = [name, is_free === "1" ? 1 : 0, draw_animation, real_animation, sound_file];
+
+  try {
+    const con = await createConnection();
+    const [result] = await con.execute(query, values);
+    await con.end();
+    return result;
+  } catch (err) {
+    console.error("Erreur lors de la création de la carte :", err);
+    throw err;
+  }
+}
+
+// Mettre à jour une carte
+async function updateCard(id, name, is_free, draw_animation, real_animation, sound_file) {
+  let fields = [];
+  let values = [];
+
+  if (name !== undefined) {
+    fields.push('name = ?');
+    values.push(name);
+  }
+  if (is_free !== undefined) {
+    fields.push('is_free = ?');
+    values.push(is_free === "1" || is_free === 1 ? 1 : 0);
+  }
+  if (draw_animation !== undefined) {
+    fields.push('draw_animation = ?');
+    values.push(draw_animation);
+  }
+  if (real_animation !== undefined) {
+    fields.push('real_animation = ?');
+    values.push(real_animation);
+  }
+  if (sound_file !== undefined) {
+    fields.push('sound_file = ?');
+    values.push(sound_file);
+  }
+
+  if (fields.length === 0) return;
+
+  const query = `UPDATE card SET ${fields.join(', ')} WHERE id = ?`;
+  values.push(id);
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    throw err;
+  }
+}
+
+// Supprimer une carte
+async function deleteCard(cardId) {
+  const con = await createConnection();
+  try {
+    // Supprimer les associations éventuelles (ex: card_category)
+    await con.query('DELETE FROM card_category WHERE card_id = ?', [cardId]);
+    // Supprimer la carte
+    const [result] = await con.query('DELETE FROM card WHERE id = ?', [cardId]);
+    if (!result || result.affectedRows === 0) {
+      throw new Error('Carte non trouvée');
+    }
+    return result;
+  } catch (error) {
+    throw error;
+  } finally {
+    await con.end();
+  }
+}
 
 module.exports = {
   createUser,
+  updateUser,
+  deleteUser,
   loginUser,
   getUsersNumber,
-  updateUser,
+  getUsersEvolution,
   getUserById,   
   getAllUsers,
+  getTherapistIdByUserId,
+
   getAllCategories,
-  getAllCards,
-  getCardsByCategory,
+  getCategoryById,
   deleteCategory,
   updateCategory,
-  getCategoryById,
-  getTherapistIdByUserId,
-  deleteUser,
   createCategory,
+
+  getAllCards,
+  getCardsByCategory,
+  getCardImage,
+  getCardAnimation,
+  getCardSound,
+  createCard,
+  updateCard,
+  deleteCard,
 };

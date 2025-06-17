@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
+import { Spinner, Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
 import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
 import { CreateModal } from "@/components/category/CreateModal"; // Ajoute cet import
@@ -123,7 +123,11 @@ export default function SeriesPage() {
   };
 
   if (loading) {
-    return <div>Chargement...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg"/>
+      </div>
+    );
   }
 
   return (
@@ -143,9 +147,9 @@ export default function SeriesPage() {
           color="primary" 
           endContent={<PlusIcon />}
           size="sm"
-          onPress={() => setIsCreateModalOpen(true)} // Ouvre le modal ici
+          onPress={() => setIsCreateModalOpen(true)}
         >
-          Creer une série
+          Créer une série
         </Button>
       </h1>
       
@@ -206,7 +210,6 @@ export default function SeriesPage() {
                 {category.name}
               </h4>
             </div>
-            {/* Description en bas si tu veux la garder */}
             <CardFooter className="flex flex-col items-center relative z-10">
               <p className="text-medium text-white">{category.description}</p>
             </CardFooter>
@@ -214,7 +217,6 @@ export default function SeriesPage() {
         ))}
       </div>
 
-      {/* Ajoute le CreateModal ici */}
       <CreateModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
