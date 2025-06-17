@@ -25,6 +25,7 @@ const {
   getCardAnimation,
   getCardSound,
   createCard,
+  validateCard,
   updateCard,
   deleteCard,
   /*Therapist*/
@@ -358,6 +359,18 @@ app.post('/api/cards', upload.fields([
   } catch (err) {
     console.error("Erreur lors de la création de la carte :", err);
     res.status(500).json({ error: "Erreur lors de la création de la carte." });
+  }
+});
+
+// Mettre à jour le statut de validation d'une carte
+app.patch('/api/cards/:id/validate', async (req, res) => {
+  const cardId = Number(req.params.id); // <-- force en nombre
+  const is_validated = Number(req.body.is_validated); // <-- force en nombre
+  try {
+    await validateCard(cardId, undefined, undefined, undefined, undefined, undefined, is_validated);
+    res.status(200).json({ message: "Statut de validation mis à jour." });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la mise à jour du statut." });
   }
 });
 

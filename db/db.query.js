@@ -413,6 +413,22 @@ async function createCard(name, is_free, draw_animation, real_animation, sound_f
   }
 }
 
+async function validateCard(id, name, is_free, draw_animation, real_animation, sound_file, is_validated) {
+  console.log('validateCard', { id, is_validated }); // Ajoute ce log
+  if (is_validated === undefined) return;
+  const query = `UPDATE card SET is_validated = ? WHERE id = ?`;
+  const values = [is_validated, id];
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    throw err;
+  }
+}
+
 // Mettre à jour une carte
 async function updateCard(id, name, is_free, draw_animation, real_animation, sound_file) {
   let fields = [];
@@ -496,6 +512,7 @@ module.exports = {
   getCardAnimation,
   getCardSound,
   createCard,
+  validateCard,
   updateCard,
   deleteCard,
 };

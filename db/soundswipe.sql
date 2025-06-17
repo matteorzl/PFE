@@ -34,7 +34,7 @@ CREATE TABLE `card` (
   `sound_file` longblob DEFAULT NULL,
   `draw_animation` longblob DEFAULT NULL,
   `real_animation` longblob DEFAULT NULL,
-  `is_validated` tinyint(1) DEFAULT NULL,
+  `is_validated` int(11) DEFAULT NULL,
   `is_free` tinyint(1) DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -111,7 +111,7 @@ CREATE TABLE `patient_category` (
 CREATE TABLE `patient_card` (
   `patient_id` int(11) NOT NULL,
   `card_id` int(11) NOT NULL,
-  `is_validated` TINYINT(1) DEFAULT 0,
+  `is_validated` int(11) DEFAULT 0,
   `validated_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
