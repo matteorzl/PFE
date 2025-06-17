@@ -45,7 +45,24 @@ export const EditModal = ({ isOpen, onClose, onEdit, user }: EditModalProps) => 
     setIsEditing(true);
     setError(null);
     try {
-      await onEdit({ id: user.id, ...form });
+      const res = await fetch(`http://localhost:3001/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstname: form.firstname,
+          lastname: form.lastname,
+          mail: form.mail,
+        }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de la modification");
+      await onEdit({
+        id: user.id,
+        firstname: form.firstname,
+        lastname: form.lastname,
+        mail: form.mail,
+      });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue");

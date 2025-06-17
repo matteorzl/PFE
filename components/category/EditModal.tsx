@@ -64,7 +64,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
         formData.append("image", file);
       }
       const res = await fetch(`http://localhost:3001/api/categories/${category.id}`, {
-        method: "PUT",
+        method: "PATCH",
         body: formData,
       });
       if (!res.ok) throw new Error("Erreur lors de la modification");
