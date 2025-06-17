@@ -13,7 +13,7 @@ interface CardItem {
   sound_file: string;
   draw_animation: string;
   real_animation: string;
-  is_validated: boolean | null;
+  is_validated: number | null;
   is_free: boolean | null;
   order_list: number;
 }
@@ -88,6 +88,17 @@ export const DeleteDocumentIcon = (props: any) => (
   </svg>
 );
 
+const ValidateIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-green-500">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+);
+const RefuseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-red-500">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+);
+
 const ImageIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
     <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
@@ -141,6 +152,8 @@ export default function CardsPage() {
   useEffect(() => {
     let filtered = [...cards];
 
+    console.log(cards)
+
     // Filtrage par recherche
     if (searchValue) {
       filtered = filtered.filter((card) =>
@@ -150,17 +163,26 @@ export default function CardsPage() {
 
     // Filtrage par statut
     if (filterStatus === "validated") {
-      filtered = filtered.filter((card) => card.is_validated === true);
+      filtered = filtered.filter((card) => card.is_validated === 1);
     } else if (filterStatus === "pending") {
       filtered = filtered.filter(
-        (card) => card.is_validated === null || card.is_validated === undefined
+        (card) => card.is_validated === null || card.is_validated === 0
       );
     } else if (filterStatus === "rejected") {
-      filtered = filtered.filter((card) => card.is_validated === false);
+      filtered = filtered.filter((card) => card.is_validated === 2);
     }
 
     setFilteredCards(filtered);
   }, [searchValue, filterStatus, cards]);
+
+  const handleValidateCard = async (cardId: number, is_validated: 1 | 2) => {
+  await fetch(`http://localhost:3001/api/cards/${cardId}/validate`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ is_validated }),
+  });
+  await fetchCards();
+};
 
   const handleTabClick = (cardId: number, tab: "image" | "gif") => {
     setTabsState((prev) => ({ ...prev, [cardId]: tab }));
@@ -325,7 +347,7 @@ export default function CardsPage() {
                     <div className="flex flex-col gap-0">
                       <div className="flex items-center gap-2">
                         <h3 className="font-semibold text-foreground/90">{card.name}</h3>
-                        {card.is_validated ? (
+                        {card.is_validated === 1 ? (
                           <div title="Validé par l'administrateur">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -342,7 +364,7 @@ export default function CardsPage() {
                               />
                             </svg>
                           </div>
-                        ) : card.is_validated === false ? (
+                        ) : card.is_validated === 2 ? (
                           <div title="Refusé par l'administrateur">
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -409,12 +431,38 @@ export default function CardsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col mt-3 gap-2">
+                  <div className="flex flex-col items-center justify-center w-full mt-2">
                     <audio
                       controls
                       className="w-full rounded-lg bg-white/80 shadow-md ring-1 ring-inset ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
                       src={`http://localhost:3001/api/cards/${card.id}/sound`}
                     />
+                    <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
+                      {(card.is_validated === 0 || card.is_validated === null) ? (
+                        <>
+                          <Button
+                            title="Valider"
+                            className="rounded-full bg-green-100 hover:bg-green-200 transition"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleValidateCard(card.id, 1);
+                            }}
+                          >
+                            <ValidateIcon />
+                          </Button>
+                          <Button
+                            title="Refuser"
+                            className="rounded-full bg-red-100 hover:bg-red-200 transition"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleValidateCard(card.id, 2);
+                            }}
+                          >
+                            <RefuseIcon />
+                          </Button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
