@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import CreateModal from "@/components/card/CreateModal";
 import { EditModal } from "@/components/card/EditModal";
 import { DeleteModal } from "@/components/card/DeleteModal";
+import { CustomAudioPlayer } from "@/components/CustomAudioPlayer";
 
 interface CardItem {
   id: number;
@@ -471,11 +472,11 @@ export default function CardsPage() {
                   </div>
 
                   <div className="flex flex-col items-center justify-center w-full mt-2">
-                    <audio
-                      controls
-                      className="w-full rounded-lg bg-white/80 shadow-md ring-1 ring-inset ring-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                      src={`http://localhost:3001/api/cards/${card.id}/sound`}
-                    />
+                    <div className="w-full">
+                      <CustomAudioPlayer 
+                      src={`http://localhost:3001/api/cards/${card.id}/sound`} 
+                      />
+                    </div>
                     <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
                       {(card.is_validated === 0 || card.is_validated === null) ? (
                         <>
