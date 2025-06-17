@@ -119,6 +119,7 @@ export default function CardsPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<CardItem | null>(null);
   const [filteredCards, setFilteredCards] = useState<CardItem[]>([]);
+  const [filterFree, setFilterFree] = useState<"all" | "free" | "paid">("all");
   const [searchValue, setSearchValue] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -152,16 +153,12 @@ export default function CardsPage() {
   useEffect(() => {
     let filtered = [...cards];
 
-    console.log(cards)
-
-    // Filtrage par recherche
     if (searchValue) {
       filtered = filtered.filter((card) =>
         card.name.toLowerCase().includes(searchValue.toLowerCase())
       );
     }
 
-    // Filtrage par statut
     if (filterStatus === "validated") {
       filtered = filtered.filter((card) => card.is_validated === 1);
     } else if (filterStatus === "pending") {
@@ -172,8 +169,14 @@ export default function CardsPage() {
       filtered = filtered.filter((card) => card.is_validated === 2);
     }
 
+    if (filterFree === "free") {
+      filtered = filtered.filter((card) => card.is_free === true || card.is_free === 1);
+    } else if (filterFree === "paid") {
+      filtered = filtered.filter((card) => card.is_free === false || card.is_free === 0);
+    }
+
     setFilteredCards(filtered);
-  }, [searchValue, filterStatus, cards]);
+  }, [searchValue, filterStatus, filterFree, cards]);
 
   const handleValidateCard = async (cardId: number, is_validated: 1 | 2) => {
   await fetch(`http://localhost:3001/api/cards/${cardId}/validate`, {
@@ -223,8 +226,13 @@ export default function CardsPage() {
         </BreadcrumbItem>
         <BreadcrumbItem>Cartes</BreadcrumbItem>
       </Breadcrumbs>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Cartes</h1>
+      <h1 className="text-2xl font-bold mb-4 w-100 flex items-baseline gap-2 justify-between">
+        <span className="flex items-baseline gap-2">
+          Cartes
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-s font-medium bg-blue-100 text-blue-800">
+            {cards.length}
+          </span>
+        </span>
         <Button 
           color="primary" 
           endContent={<PlusIcon />}
@@ -233,7 +241,7 @@ export default function CardsPage() {
         >
           Créer une carte
         </Button>
-      </div>
+      </h1>
 
       <div className="flex justify-between items-center mb-4">
         <Input
@@ -242,34 +250,65 @@ export default function CardsPage() {
           onValueChange={setSearchValue}
           className="w-full max-w-md"
         />
-        <Dropdown>
-          <DropdownTrigger>
-            <Button variant="bordered" className="ml-4">
-              {filterStatus === "all"
-                ? "Tous"
-                : filterStatus === "validated"
-                ? "Validé"
-                : filterStatus === "pending"
-                ? "En attente"
-                : "Refusé"}
-              <ChevronDownIcon />
-            </Button>
-          </DropdownTrigger>
-          <DropdownMenu>
-            <DropdownItem key="all" onClick={() => setFilterStatus("all")}>
-              Tous
-            </DropdownItem>
-            <DropdownItem key="validated" onClick={() => setFilterStatus("validated")}>
-              Validé
-            </DropdownItem>
-            <DropdownItem key="pending" onClick={() => setFilterStatus("pending")}>
-              En attente
-            </DropdownItem>
-            <DropdownItem key="rejected" onClick={() => setFilterStatus("rejected")}>
-              Refusé
-            </DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
+        <div className="flex gap-4">
+          <div>
+            Statut
+            <Dropdown>
+              <DropdownTrigger>
+                <Button variant="bordered" className="ml-4">
+                  {filterStatus === "all"
+                    ? "Tous"
+                    : filterStatus === "validated"
+                    ? "Validé"
+                    : filterStatus === "pending"
+                    ? "En attente"
+                    : "Refusé"}
+                  <ChevronDownIcon />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="all" onClick={() => setFilterStatus("all")}>
+                  Tous
+                </DropdownItem>
+                <DropdownItem key="validated" onClick={() => setFilterStatus("validated")}>
+                  Validé
+                </DropdownItem>
+                <DropdownItem key="pending" onClick={() => setFilterStatus("pending")}>
+                  En attente
+                </DropdownItem>
+                <DropdownItem key="rejected" onClick={() => setFilterStatus("rejected")}>
+                  Refusé
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+          <div>
+            Type
+            <Dropdown>
+              <DropdownTrigger>
+                <Button variant="bordered" className="ml-4">
+                  {filterFree === "all"
+                    ? "Tous"
+                    : filterFree === "free"
+                    ? "Gratuit"
+                    : "Premium"}
+                  <ChevronDownIcon />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem key="all" onClick={() => setFilterFree("all")}>
+                  Tous
+                </DropdownItem>
+                <DropdownItem key="free" onClick={() => setFilterFree("free")}>
+                  Gratuit
+                </DropdownItem>
+                <DropdownItem key="paid" onClick={() => setFilterFree("paid")}>
+                  Premium
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
