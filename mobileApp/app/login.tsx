@@ -28,7 +28,7 @@ export default function LoginScreen() {
       });
 
       if (response.status === 200) {
-        router.push('/home');
+        router.push('/series' as any);
       } else {
         Alert.alert('Erreur', 'Connexion échouée');
       }

@@ -182,7 +182,25 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/categories/:categoryId/cards', async (req, res) => {
   const { categoryId } = req.params;
   try {
-    const cards = await getCardsByCategory(categoryId);
+    let cards = await getCardsByCategory(categoryId);
+    cards = cards.map(card => ({
+      ...card,
+      draw_animation: card.draw_animation && Buffer.isBuffer(card.draw_animation)
+        ? `data:image/png;base64,${card.draw_animation.toString('base64')}`
+        : card.draw_animation && card.draw_animation.data
+          ? `data:image/png;base64,${Buffer.from(card.draw_animation.data).toString('base64')}`
+          : null,
+      real_animation: card.real_animation && Buffer.isBuffer(card.real_animation)
+        ? `data:image/png;base64,${card.real_animation.toString('base64')}`
+        : card.real_animation && card.real_animation.data
+          ? `data:image/png;base64,${Buffer.from(card.real_animation.data).toString('base64')}`
+          : null,
+      sound_file: card.sound_file && Buffer.isBuffer(card.sound_file)
+        ? `data:audio/mpeg;base64,${card.sound_file.toString('base64')}`
+        : card.sound_file && card.sound_file.data
+          ? `data:audio/mpeg;base64,${Buffer.from(card.sound_file.data).toString('base64')}`
+          : null,
+    }));
     res.status(200).json(cards);
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);

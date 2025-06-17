@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -14,6 +15,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export default function HomeScreen({ navigation }: Props) {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
+  const router = useRouter();
+  console.log('Categories', categories);
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
@@ -50,7 +53,9 @@ export default function HomeScreen({ navigation }: Props) {
           <TouchableOpacity key={cat.id} style={[
             styles.card,
             cat.progress === 100 && { borderColor: '#FFD600', borderWidth: 3 }
-          ]}>
+          ]}
+          onPress={() => router.push(`/series/${cat.id}` as any)}
+          >
             <Image
               source={{ uri: cat.image }}
               style={styles.cardImage}
