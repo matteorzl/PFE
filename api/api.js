@@ -207,7 +207,7 @@ app.post('/api/categories', upload.single('image'), async (req, res) => {
 });
 
 // Récupérer une catégorie par son id
-app.put('/api/categories/:categoryId', upload.single('image'), async (req, res) => {
+app.patch('/api/categories/:categoryId', upload.single('image'), async (req, res) => {
   const { categoryId } = req.params;
   const { name, description } = req.body;
   const image = req.file ? req.file.buffer : null; // blob
