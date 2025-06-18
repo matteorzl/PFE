@@ -44,7 +44,7 @@ const users = [
 const categories = [
   { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1 },
   { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1 },
-  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpg', created_by: 2 },
+  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2 },
   { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2 }
 ];
 
@@ -224,10 +224,20 @@ async function main() {
   for (const [i, cat] of categories.entries()) {
     // created_by = 1 ou 2 (user index), il faut retrouver le bon id utilisateur
     const createdByUserId = userIds[cat.created_by - 1];
+
+    // Ajout : lecture du buffer image selon le nom de fichier
+    let imageBuffer = null;
+    if (cat.image) {
+      const imagePath = path.join(__dirname, 'seeder', 'image', cat.image);
+      if (fs.existsSync(imagePath)) {
+        imageBuffer = fs.readFileSync(imagePath);
+      }
+    }
+
     const [result] = await conn.execute(
       `INSERT INTO category (name, description, image, created_by)
-       VALUES (?, ?, ?, ?)`,
-      [cat.name, cat.description, cat.image, createdByUserId]
+      VALUES (?, ?, ?, ?)`,
+      [cat.name, cat.description, imageBuffer, createdByUserId]
     );
     categoryIds.push(result.insertId);
   }
