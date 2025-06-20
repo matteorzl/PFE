@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 
 type RootStackParamList = {
   Home: undefined;
@@ -17,24 +18,55 @@ export default function HomeScreen({ navigation }: Props) {
   const [cards, setCards] = useState([]);
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
   const [showReal, setShowReal] = useState<{ [key: number]: boolean }>({});
+  const [currentIndex, setCurrentIndex] = useState(0);
   const soundRef = useRef<Audio.Sound | null>(null);
   const router = useRouter();
   const { id: categoryId } = useLocalSearchParams<{ id: string }>();
-  console.log('Cards', cards);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/categories/${categoryId}/cards`)
+    fetch(`http://192.168.1.60:3001/api/categories/${categoryId}/cards`)
       .then(res => res.json())
       .then(data => setCards(data))
       .catch(() => setCards([]));
   }, [categoryId]);
 
+  useEffect(() => {
+    // Forcer le mode paysage à l'arrivée
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
+    // Remettre en portrait quand on quitte la page
+    return () => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    };
+  }, []);
+
   const handlePlaySound = async (card: any, idx: number) => {
     try {
+      // Si le son de cette carte est déjà en cours, on stoppe
+      if (playingIndex === idx && soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+        setPlayingIndex(null);
+        return;
+      }
+
+      // Sinon, on joue le son normalement
       if (soundRef.current) {
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        playThroughEarpieceAndroid: false,
+      });
+
       setPlayingIndex(idx);
       const { sound } = await Audio.Sound.createAsync({ uri: card.sound_file });
       soundRef.current = sound;
@@ -48,80 +80,109 @@ export default function HomeScreen({ navigation }: Props) {
       setPlayingIndex(null);
     }
   };
+  
 
   const handleToggleImage = (cardId: number) => {
     setShowReal(prev => ({ ...prev, [cardId]: !prev[cardId] }));
   };
 
+  const card = cards[currentIndex];
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#eee', paddingTop: 60 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
-        <Image source={require('@/assets/images/Logo.png')} style={styles.logo} />
-        <Text style={{ fontSize: 26, fontWeight: 'bold', textAlign: 'center', flex: 1 }}>Séries</Text>
-        <TouchableOpacity onPress={() => navigation.replace('Login')}>
-          <Ionicons name="log-out-outline" size={28} color="#1a3cff" />
+    <View style={{ flex: 1, backgroundColor: 'black' }}>
+      <View style={{ position: 'absolute', top: 50, left: 16, zIndex: 10 }}>
+        <TouchableOpacity style={{backgroundColor: 'white', padding: 2, borderRadius: 50 }} onPress={async () => {
+          if (soundRef.current) {
+                await soundRef.current.stopAsync();
+                await soundRef.current.unloadAsync();
+                soundRef.current = null;
+                setPlayingIndex(null);
+              }
+          router.push('/series');
+        }
+          }>
+          <Ionicons name="arrow-back-circle" size={40} color="#1a3cff" />
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8 }}>
-        {cards.map((card: any, idx) => (
-          <TouchableOpacity key={card.id} style={[
-            styles.card,
-            card.progress === 100 && { borderColor: '#FFD600', borderWidth: 3 }
-          ]}>
+      {card && (
+        <View style={[{ width: '100%', height: '100%' }, styles.card]}>
+          {/* Image */}
+          <TouchableOpacity
+            onPress={async () => {
+              // Stoppe et décharge le son en cours s'il y en a un
+              if (soundRef.current) {
+                await soundRef.current.stopAsync();
+                await soundRef.current.unloadAsync();
+                soundRef.current = null;
+                setPlayingIndex(null);
+              }
+              // Passe à la carte suivante
+              setCurrentIndex((prev) => (prev + 1) % cards.length);
+            }}
+            disabled={cards.length <= 1}
+            style={{ backgroundColor: 'white', padding: 4, borderRadius: 50 }}
+          >
             <Image
               source={{ uri: showReal[card.id] ? card.real_animation : card.draw_animation }}
               style={styles.cardImage}
-              resizeMode="cover"
             />
-            <View style={styles.cardOverlay} />
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{card.name}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <TouchableOpacity onPress={() => handlePlaySound(card, idx)}>
-                  <Ionicons name={playingIndex === idx ? "pause-circle" : "play-circle"} size={32} color="#FFD600" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleToggleImage(card.id)}>
-                  <Ionicons name="swap-horizontal" size={28} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </View>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {/* Overlay du nom en haut */}
+          <View style={{
+            position: 'absolute',
+            top: 50,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+            zIndex: 2,
+          }}>
+            <Text style={styles.cardTitle}>{card.name}</Text>
+          </View>
+          {/* Overlay des boutons en bas */}
+          <View style={{
+            position: 'absolute',
+            bottom: 40,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: 18,
+            zIndex: 2,
+            width: '100%',
+          }}>
+            {/* Bouton Play */}
+            <TouchableOpacity onPress={() => handlePlaySound(card, currentIndex)}>
+              <Ionicons name={playingIndex === currentIndex ? "pause-circle" : "play-circle"} size={50} color="#FFD600" style={{backgroundColor: 'white', padding: 4, borderRadius: 50}}/>
+            </TouchableOpacity>
+            {/* Bouton Switch Image */}
+            <TouchableOpacity onPress={() => handleToggleImage(card.id)} style={{backgroundColor: 'white', padding: 4, borderRadius: 50}}>
+              <Ionicons name="swap-horizontal" size={50} color="#1a3cff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  logo: {
-    height: 125/3,
-    width: 100/3,
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    marginRight: 8,
-    elevation: 2,
-  },
   card: {
-    height: 80,
+    height: "100%",
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
-    backgroundColor: '#fff',
     elevation: 3,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'column',
+    justifyContent: 'center',
     position: 'relative',
+    backgroundColor: 'black'
   },
   cardImage: {
-    position: 'absolute',
     width: '100%',
     height: '100%',
+    resizeMode: 'contain',
+    alignSelf: 'center',
   },
   cardOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -142,23 +203,5 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
-  },
-  progressLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'right',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
-  },
-  progressValue: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 22,
-    textAlign: 'right',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
-  },
+  }
 });

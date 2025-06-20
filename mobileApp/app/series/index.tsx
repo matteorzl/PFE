@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
@@ -16,14 +16,17 @@ export default function HomeScreen({ navigation }: Props) {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const router = useRouter();
-  console.log('Categories', categories);
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
-    fetch('http://localhost:3001/api/categories')
+    fetch('http://192.168.1.60:3001/api/categories')
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setCategories([]));
+  }, []);
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
   }, []);
 
   const filteredCategories = categories.filter(cat =>
