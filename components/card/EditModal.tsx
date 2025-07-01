@@ -16,7 +16,6 @@ interface EditCardModalProps {
   onEdit: (card: {
     id: number;
     name: string;
-    is_free: boolean;
     image?: File | string;
     animation?: File | string;
     sound?: File | string;
@@ -24,7 +23,6 @@ interface EditCardModalProps {
   card: {
     id: number;
     name: string;
-    is_free: boolean;
     draw_animation?: string;
     real_animation?: string;
     sound_file?: string;
@@ -32,7 +30,7 @@ interface EditCardModalProps {
 }
 
 export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps) => {
-  const [form, setForm] = useState({ name: "", is_free: true });
+  const [form, setForm] = useState({ name: ""});
   const [image, setImage] = useState<File | null>(null);
   const [animation, setAnimation] = useState<File | null>(null);
   const [sound, setSound] = useState<File | null>(null);
@@ -43,7 +41,6 @@ export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps)
     if (card) {
       setForm({
         name: card.name,
-        is_free: !!card.is_free,
       });
       setImage(null);
       setAnimation(null);
@@ -53,10 +50,6 @@ export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSwitch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, is_free: e.target.checked });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +71,6 @@ export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps)
     try {
       const formData = new FormData();
       formData.append("name", form.name);
-      formData.append("is_free", form.is_free ? "1" : "0");
       if (image) formData.append("image", image);
       if (animation) formData.append("draw_animation", animation);
       if (sound) formData.append("sound_file", sound);
@@ -91,7 +83,6 @@ export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps)
       await onEdit({
         id: card.id,
         name: form.name,
-        is_free: form.is_free,
         image: image || card.draw_animation,
         animation: animation || card.real_animation,
         sound: sound || card.sound_file,
@@ -174,12 +165,6 @@ export const EditModal = ({ isOpen, onClose, onEdit, card }: EditCardModalProps)
                   className="block w-full"
                 />
                 {/* Pas d'aperçu audio ici, mais tu peux ajouter un lecteur si besoin */}
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.is_free} onChange={handleSwitch}>
-                  Carte gratuite
-                </Switch>
-                <span className="text-sm text-gray-500">{form.is_free ? "Gratuite" : "Premium"}</span>
               </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
             </ModalBody>

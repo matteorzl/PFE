@@ -28,6 +28,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
   const [form, setForm] = useState({ name: "", description: "", image: "" });
   const [file, setFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isFree, setIsFree] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
         image: category.image || "",
       });
       setFile(null);
+      setIsFree(category.is_free === 1); // <-- Ajoute ceci
     }
   }, [category]);
 
@@ -63,6 +65,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
       if (file) {
         formData.append("image", file);
       }
+      formData.append("is_free", isFree ? "1" : "0");
       const res = await fetch(`http://localhost:3001/api/categories/${category.id}`, {
         method: "PATCH",
         body: formData,
@@ -119,6 +122,29 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
                     className="mt-2 max-h-32 rounded"
                   />
                 )}
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-medium">Type de série</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="isFree"
+                      checked={isFree}
+                      onChange={() => setIsFree(true)}
+                    />
+                    Gratuit
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="isFree"
+                      checked={!isFree}
+                      onChange={() => setIsFree(false)}
+                    />
+                    Premium
+                  </label>
+                </div>
               </div>
               {error && <p className="text-sm text-danger mt-2">{error}</p>}
             </ModalBody>

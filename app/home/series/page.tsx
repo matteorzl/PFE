@@ -13,6 +13,7 @@ interface Category {
   description: string;
   image: string;
   created_by: number;
+  is_free: number; 
 }
 
 export const PlusIcon = (props: any) => (
@@ -21,6 +22,20 @@ export const PlusIcon = (props: any) => (
       <path d="M6 12h12" />
       <path d="M12 18V6" />
     </g>
+  </svg>
+);
+
+const CrownIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 64 64"
+    className="w-6 h-6 text-yellow-500"
+  >
+    <path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
+    <rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
+    <circle cx="8" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+    <circle cx="32" cy="20" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+    <circle cx="56" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
   </svg>
 );
 
@@ -153,7 +168,7 @@ export default function SeriesPage() {
         </Button>
       </h1>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {categories.map((category) => (
           <Card
             key={category.id}
@@ -166,6 +181,11 @@ export default function SeriesPage() {
             }}
             onPress={() => handleCardClick(category.id, category.name)}
           >
+            {category.is_free === 0 && (
+              <div className="absolute top-2 left-2 z-20">
+                <CrownIcon />
+              </div>
+            )}
             {/* Dropdown en haut à droite */}
             <div className="absolute top-2 right-2 flex justify-end w-full z-10">
               <Dropdown>

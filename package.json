@@ -31,6 +31,7 @@
     "@react-aria/visually-hidden": "3.8.18",
     "bcrypt": "^5.1.1",
     "clsx": "2.1.1",
+    "color-thief-browser": "^2.0.2",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "framer-motion": "11.13.1",

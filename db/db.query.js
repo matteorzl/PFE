@@ -252,14 +252,14 @@ async function getCardsByCategory(categoryId) {
   }
 }
 
-async function updateCategory(id, name, description, image) {
+async function updateCategory(id, name, description, image, is_free) {
   let query, values;
   if (image) {
-    query = `UPDATE category SET name = ?, description = ?, image = ? WHERE id = ?`;
-    values = [name, description, image, id];
+    query = `UPDATE category SET name = ?, description = ?, image = ?, is_free = ? WHERE id = ?`;
+    values = [name, description, image, is_free, id];
   } else {
-    query = `UPDATE category SET name = ?, description = ? WHERE id = ?`;
-    values = [name, description, id];
+    query = `UPDATE category SET name = ?, description = ?, is_free = ? WHERE id = ?`;
+    values = [name, description, is_free, id];
   }
 
   try {
@@ -338,12 +338,12 @@ const deleteCategory = async (categoryId) => {
   }
 };
 
-async function createCategory(name, description, therapistId, image) {
+async function createCategory(name, description, therapistId, image, is_free) {
   const query = `
-    INSERT INTO category (name, description, image, created_by)
-    VALUES (?, ?, ?, ?);
+    INSERT INTO category (name, description, image, created_by, is_free)
+    VALUES (?, ?, ?, ?, ?);
   `;
-  const values = [name, description, image, therapistId];
+  const values = [name, description, image, therapistId, is_free];
 
   try {
     const con = await createConnection();
@@ -359,7 +359,7 @@ async function createCategory(name, description, therapistId, image) {
 // Fonction pour récupérer toutes les cartes
 async function getAllCards() {
   const query = `
-    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, is_free, order_list
+    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, order_list
     FROM card
   `;
 
@@ -417,12 +417,12 @@ async function getCardSound(cardId) {
 }
 
 // Créer une nouvelle carte
-async function createCard(name, is_free, draw_animation, real_animation, sound_file) {
+async function createCard(name, draw_animation, real_animation, sound_file) {
   const query = `
-    INSERT INTO card (name, is_free, draw_animation, real_animation, sound_file, is_validated, order_list)
-    VALUES (?, ?, ?, ?, ?, 0, 1)
+    INSERT INTO card (name, draw_animation, real_animation, sound_file, is_validated, order_list)
+    VALUES (?, ?, ?, ?, 0, 1)
   `;
-  const values = [name, is_free === "1" ? 1 : 0, draw_animation, real_animation, sound_file];
+  const values = [name, draw_animation, real_animation, sound_file];
 
   try {
     const con = await createConnection();
@@ -435,7 +435,7 @@ async function createCard(name, is_free, draw_animation, real_animation, sound_f
   }
 }
 
-async function validateCard(id, name, is_free, draw_animation, real_animation, sound_file, is_validated) {
+async function validateCard(id, name, draw_animation, real_animation, sound_file, is_validated) {
   console.log('validateCard', { id, is_validated }); // Ajoute ce log
   if (is_validated === undefined) return;
   const query = `UPDATE card SET is_validated = ? WHERE id = ?`;
@@ -452,17 +452,13 @@ async function validateCard(id, name, is_free, draw_animation, real_animation, s
 }
 
 // Mettre à jour une carte
-async function updateCard(id, name, is_free, draw_animation, real_animation, sound_file) {
+async function updateCard(id, name, draw_animation, real_animation, sound_file) {
   let fields = [];
   let values = [];
 
   if (name !== undefined) {
     fields.push('name = ?');
     values.push(name);
-  }
-  if (is_free !== undefined) {
-    fields.push('is_free = ?');
-    values.push(is_free === "1" || is_free === 1 ? 1 : 0);
   }
   if (draw_animation !== undefined) {
     fields.push('draw_animation = ?');

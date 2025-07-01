@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import ColorThief from "color-thief-browser";
+import { useEffect, useRef, useState } from "react";
 import { Spinner, Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import CreateModal from "@/components/card/CreateModal";
@@ -15,8 +16,14 @@ interface CardItem {
   draw_animation: string;
   real_animation: string;
   is_validated: number | null;
-  is_free: boolean | null;
   order_list: number;
+}
+
+// Utilitaire pour déterminer si une couleur RGB est claire
+function isColorLight(rgb: string): boolean {
+  const [r, g, b] = rgb.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 180;
 }
 
 export const PlusIcon = (props: any) => (
@@ -125,6 +132,8 @@ export default function CardsPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [tabsState, setTabsState] = useState<{ [cardId: number]: "image" | "gif" }>({});
+  const [cardGradients, setCardGradients] = useState<{ [cardId: number]: string }>({});
+  const [cardLightColors, setCardLightColors] = useState<{ [cardId: number]: string }>({});
   const router = useRouter();
 
   const fetchCards = async () => {
@@ -144,6 +153,24 @@ export default function CardsPage() {
       console.error("Erreur :", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImageLoad = (cardId: number, imgElement: HTMLImageElement) => {
+    try {
+      const colorThief = new ColorThief();
+      const palette = colorThief.getPalette(imgElement, 2);
+      if (palette && palette.length >= 2) {
+        // Trouve la couleur la plus claire (celle avec la plus grande somme r+g+b)
+        const [c1, c2] = palette;
+        const lightest = (c1[0] + c1[1] + c1[2]) > (c2[0] + c2[1] + c2[2]) ? c1 : c2;
+        const gradient = `linear-gradient(135deg, rgb(${c1.join(",")}), rgb(${c2.join(",")}))`;
+        setCardGradients(prev => ({ ...prev, [cardId]: gradient }));
+        setCardLightColors(prev => ({ ...prev, [cardId]: `rgb(${lightest.join(",")})` }));
+      }
+    } catch (e) {
+      setCardGradients(prev => ({ ...prev, [cardId]: "linear-gradient(135deg, #eee, #ccc)" }));
+      setCardLightColors(prev => ({ ...prev, [cardId]: "#eee" }));
     }
   };
 
@@ -170,23 +197,17 @@ export default function CardsPage() {
       filtered = filtered.filter((card) => card.is_validated === 2);
     }
 
-    if (filterFree === "free") {
-      filtered = filtered.filter((card) => card.is_free === true || card.is_free === 1);
-    } else if (filterFree === "paid") {
-      filtered = filtered.filter((card) => card.is_free === false || card.is_free === 0);
-    }
-
     setFilteredCards(filtered);
   }, [searchValue, filterStatus, filterFree, cards]);
 
   const handleValidateCard = async (cardId: number, is_validated: 1 | 2) => {
-  await fetch(`http://localhost:3001/api/cards/${cardId}/validate`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ is_validated }),
-  });
-  await fetchCards();
-};
+    await fetch(`http://localhost:3001/api/cards/${cardId}/validate`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_validated }),
+    });
+    await fetchCards();
+  };
 
   const handleTabClick = (cardId: number, tab: "image" | "gif") => {
     setTabsState((prev) => ({ ...prev, [cardId]: tab }));
@@ -312,203 +333,226 @@ export default function CardsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredCards.map((card) => (
-          <Card
-            key={card.id}
-            isBlurred
-            className="border-none bg-background/60 dark:bg-default-100/50 max-w-[600px] cursor-pointer relative"
-            shadow="sm"
-          >
-            {/* Dropdown en haut à droite */}
-            <div className="absolute top-2 right-2 flex justify-end w-full z-10">
-              <Dropdown>
-                <DropdownTrigger>
-                  <Button variant="light" className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0">...</Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem
-                    key="edit"
-                    startContent={<EditDocumentIcon />}
-                    onClick={() => handleEditClick(card)}
-                  >
-                    Modifier
-                  </DropdownItem>
-                  <DropdownItem
-                    key="delete"
-                    className="text-danger"
-                    color="danger"
-                    startContent={<DeleteDocumentIcon />}
-                    onClick={() => handleDeleteClick(card)}
-                  >
-                    Supprimer
-                </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-
-            <CardBody>
-              <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
-                <div className="relative col-span-6 md:col-span-4 flex flex-col items-center">
-                  <Image
-                    alt={`Image de ${card.name}`}
-                    className="object-cover"
-                    height={150}
-                    shadow="md"
-                    src={
-                      tabsState[card.id] === "gif"
-                        ? `http://localhost:3001/api/cards/${card.id}/animation`
-                        : `http://localhost:3001/api/cards/${card.id}/image`
-                    }
-                    width="100%"
-                  />
-                  <div className="flex gap-2 mt-2 justify-center">
-                    <button
-                      type="button"
-                      className={`p-2 rounded-full border ${tabsState[card.id] !== "gif" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
-                      title="Voir l'image"
-                      onClick={() => handleTabClick(card.id, "image")}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
+        {filteredCards.map((card) => {
+          const lightColor = cardLightColors[card.id] || "#eee";
+          const textColor = isColorLight(lightColor) ? "#222" : "#fff";
+          return (
+            <Card
+              key={card.id}
+              isBlurred
+              style={{
+                background: cardGradients[card.id] || "linear-gradient(135deg, #eee, #ccc)",
+                color: textColor,
+              }}
+              className="border-none bg-background/60 dark:bg-default-100/50 max-w-[600px] cursor-pointer relative"
+              shadow="sm"
+            >
+              {/* Dropdown en haut à droite */}
+              <div 
+                className="absolute top-2 right-2 flex justify-end w-full z-10"
+              >
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button
+                      variant="light"
+                      className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0"
+                      style={{ color: textColor }}
+                    >...</Button>
+                  </DropdownTrigger>
+                  <DropdownMenu>
+                    <DropdownItem
+                      key="edit"
+                      startContent={<EditDocumentIcon />}
+                      onClick={() => handleEditClick(card)}
                     >
-                      <ImageIcon />
-                    </button>
-                    <button
-                      type="button"
-                      className={`p-2 rounded-full border ${tabsState[card.id] === "gif" ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
-                      title="Voir le GIF"
-                      onClick={() => handleTabClick(card.id, "gif")}
+                      Modifier
+                    </DropdownItem>
+                    <DropdownItem
+                      key="delete"
+                      className="text-danger"
+                      color="danger"
+                      startContent={<DeleteDocumentIcon />}
+                      onClick={() => handleDeleteClick(card)}
                     >
-                      <GifIcon />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-col col-span-6 md:col-span-8">
-                  <div className="flex justify-between items-start">
-                    <div className="flex flex-col gap-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-foreground/90">{card.name}</h3>
-                        {card.is_validated === 1 ? (
-                          <div title="Validé par l'administrateur">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="w-5 h-5 text-green-500"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                              />
-                            </svg>
-                          </div>
-                        ) : card.is_validated === 2 ? (
-                          <div title="Refusé par l'administrateur">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="w-5 h-5 text-red-500"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                              />
-                            </svg>
-                          </div>
-                        ) : (
-                          <div title="En attente de validation par l'administrateur">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="w-5 h-5 text-yellow-500"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 py-2 text-small text-foreground/80">
-                        {card.is_free ? (
-                          <div
-                            className="flex items-center gap-2 px-4 py-2 border-2 border-green-500 rounded-full text-green-500 font-bold text-sm"
-                            title="Gratuit"
-                          >
-                            <span>Gratuit</span>
-                          </div>
-                        ) : (
-                          <div
-                            className="flex items-center gap-2 px-4 py-2 border-2 border-yellow-500 rounded-full text-yellow-500 font-bold text-sm"
-                            title="Premium"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 64 64"
-                              className="w-6 h-6 text-yellow-500"
-                            >
-                              <path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
-                              <rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
-                              <circle cx="8" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
-                              <circle cx="32" cy="20" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
-                              <circle cx="56" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
-                            </svg>
-                            <span>Premium</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-center justify-center w-full mt-2">
-                    <div className="w-full">
-                      <CustomAudioPlayer 
-                      src={`http://localhost:3001/api/cards/${card.id}/sound`} 
-                      />
-                    </div>
-                    <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
-                      {(card.is_validated === 0 || card.is_validated === null) ? (
-                        <>
-                          <Button
-                            title="Valider"
-                            className="rounded-full bg-green-100 hover:bg-green-200 transition"
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleValidateCard(card.id, 1);
-                            }}
-                          >
-                            <ValidateIcon />
-                          </Button>
-                          <Button
-                            title="Refuser"
-                            className="rounded-full bg-red-100 hover:bg-red-200 transition"
-                            onClick={e => {
-                              e.stopPropagation();
-                              handleValidateCard(card.id, 2);
-                            }}
-                          >
-                            <RefuseIcon />
-                          </Button>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                      Supprimer
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
               </div>
-            </CardBody>
-          </Card>
-        ))}
+
+              <CardBody>
+                <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
+                  <div className="relative col-span-6 md:col-span-4 flex flex-col items-center">
+                    <img
+                      src={
+                        tabsState[card.id] === "gif"
+                          ? `http://localhost:3001/api/cards/${card.id}/animation`
+                          : `http://localhost:3001/api/cards/${card.id}/image`
+                      }
+                      alt=""
+                      crossOrigin="anonymous"
+                      style={{ display: "none" }}
+                      onLoad={e => handleImageLoad(card.id, e.currentTarget)}
+                    />
+                    <Image
+                      alt={`Image de ${card.name}`}
+                      className="object-cover"
+                      height={150}
+                      shadow="md"
+                      src={
+                        tabsState[card.id] === "gif"
+                          ? `http://localhost:3001/api/cards/${card.id}/animation`
+                          : `http://localhost:3001/api/cards/${card.id}/image`
+                      }
+                      width="100%"
+                    />
+                    <div className="flex gap-2 mt-2 justify-center">
+                      <Button
+                        type="button"
+                        isIconOnly
+                        className={`p-2 rounded-full border transition
+                          ${tabsState[card.id] !== "gif"
+                            ? " text-blue-600"
+                            : "bg-transparent border-transparent"}
+                        `}
+                        title="Voir l'image"
+                        onPress={() => handleTabClick(card.id, "image")}
+                        style={{
+                          color: tabsState[card.id] === "image"
+                            ? undefined
+                            : lightColor
+                        }}
+                      >
+                        <ImageIcon />
+                      </Button>
+                      <Button
+                        type="button"
+                        isIconOnly
+                        className={`p-2 rounded-full border transition
+                          ${tabsState[card.id] === "gif"
+                            ? " text-blue-600"
+                            : "bg-transparent border-transparent"}
+                        `}
+                        title="Voir le GIF"
+                        onPress={() => handleTabClick(card.id, "gif")}
+                        style={{
+                          color: tabsState[card.id] === "gif"
+                            ? undefined
+                            : lightColor
+                        }}
+                      >
+                        <GifIcon />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col col-span-6 md:col-span-8">
+                    <div className="flex justify-between items-start">
+                      <div className="flex flex-col gap-0">
+                        <div className="flex items-center gap-2">
+                          <h3
+                            className="font-semibold"
+                            style={{ color: textColor }}
+                          >
+                          {card.name}
+                          </h3>
+                          {card.is_validated === 1 ? (
+                            <div title="Validé par l'administrateur">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="w-5 h-5 text-green-500"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                />
+                              </svg>
+                            </div>
+                          ) : card.is_validated === 2 ? (
+                            <div title="Refusé par l'administrateur">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="w-5 h-5 text-red-500"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                />
+                              </svg>
+                            </div>
+                          ) : (
+                            <div title="En attente de validation par l'administrateur">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="1.5"
+                                stroke="currentColor"
+                                className="w-5 h-5 text-yellow-500"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center w-full mt-2">
+                      <div className="w-full">
+                        <CustomAudioPlayer 
+                          src={`http://localhost:3001/api/cards/${card.id}/sound`} 
+                          color={textColor}
+                        />
+                      </div>
+                      <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
+                        {(card.is_validated === 0 || card.is_validated === null) ? (
+                          <>
+                            <Button
+                              title="Valider"
+                              className="rounded-full bg-green-100/50 hover:bg-green-200 transition"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleValidateCard(card.id, 1);
+                              }}
+                            >
+                              <ValidateIcon />
+                            </Button>
+                            <Button
+                              title="Refuser"
+                              className="rounded-full bg-red-100/50 hover:bg-red-200 transition"
+                              onClick={e => {
+                                e.stopPropagation();
+                                handleValidateCard(card.id, 2);
+                              }}
+                            >
+                              <RefuseIcon />
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })}
       </div>
       <CreateModal
         isOpen={isCreateModalOpen}

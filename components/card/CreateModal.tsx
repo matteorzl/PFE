@@ -3,7 +3,6 @@ import { Modal, ModalContent, ModalBody, ModalHeader, ModalFooter, Button, Input
 
 export default function CreateModal({ isOpen, onClose, onCreated }) {
   const [name, setName] = useState("");
-  const [isFree, setIsFree] = useState(true);
   const [image, setImage] = useState<File | null>(null);
   const [animation, setAnimation] = useState<File | null>(null);
   const [sound, setSound] = useState<File | null>(null);
@@ -30,7 +29,6 @@ export default function CreateModal({ isOpen, onClose, onCreated }) {
     try {
       const formData = new FormData();
       formData.append("name", name);
-      formData.append("is_free", isFree ? "1" : "0");
       if (image) formData.append("image", image); // image classique
       if (animation) formData.append("draw_animation", animation); // animation GIF
       if (sound) formData.append("sound_file", sound);
@@ -45,7 +43,6 @@ export default function CreateModal({ isOpen, onClose, onCreated }) {
         setError(data.error || "Erreur lors de la création de la carte.");
       } else {
         setName("");
-        setIsFree(true);
         setImage(null);
         setAnimation(null);
         setSound(null);
@@ -97,12 +94,6 @@ export default function CreateModal({ isOpen, onClose, onCreated }) {
                 onChange={handleSoundChange}
                 className="block w-full"
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={isFree} onChange={e => setIsFree(e.target.checked)}>
-                Carte gratuite
-              </Switch>
-              <span className="text-sm text-gray-500">{isFree ? "Gratuite" : "Premium"}</span>
             </div>
             {error && <div className="text-red-500 text-sm">{error}</div>}
           </ModalBody>

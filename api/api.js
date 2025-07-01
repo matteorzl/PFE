@@ -238,12 +238,12 @@ app.get('/api/categories/:categoryId/cards', async (req, res) => {
 
 // Créer une nouvelle catégorie
 app.post('/api/categories', upload.single('image'), async (req, res) => {
-  const { name, description, therapistId } = req.body;
+  const { name, description, therapistId, is_free } = req.body;
   const safeTherapistId = therapistId ? therapistId : null;
   const image = req.file ? req.file.buffer : null;
 
   try {
-    await createCategory(name, description, safeTherapistId, image);
+    await createCategory(name, description, safeTherapistId, image, is_free);
     res.status(201).json({ message: "Catégorie créée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la création de la catégorie :", err);
@@ -254,11 +254,11 @@ app.post('/api/categories', upload.single('image'), async (req, res) => {
 // Récupérer une catégorie par son id
 app.patch('/api/categories/:categoryId', upload.single('image'), async (req, res) => {
   const { categoryId } = req.params;
-  const { name, description } = req.body;
-  const image = req.file ? req.file.buffer : null; // blob
+  const { name, description, is_free } = req.body;
+  const image = req.file ? req.file.buffer : null;
 
   try {
-    await updateCategory(categoryId, name, description, image);
+    await updateCategory(categoryId, name, description, image, is_free);
     res.status(200).json({ message: "Catégorie modifiée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la modification de la catégorie :", err);
@@ -332,6 +332,7 @@ app.get('/api/cards/:id/image', async (req, res) => {
     const image = await getCardImage(req.params.id);
     if (!image) return res.sendStatus(404);
     res.set('Content-Type', 'image/png');
+    res.set('Access-Control-Allow-Origin', '*');
     res.send(image);
   } catch (err) {
     console.error("Erreur :", err);
@@ -345,6 +346,7 @@ app.get('/api/cards/:id/animation', async (req, res) => {
     const animation = await getCardAnimation(req.params.id);
     if (!animation) return res.sendStatus(404);
     res.set('Content-Type', 'image/gif');
+    res.set('Access-Control-Allow-Origin', '*');
     res.send(animation);
   } catch (err) {
     console.error("Erreur lors de la récupération de l'animation :", err);
@@ -372,7 +374,7 @@ app.post('/api/cards', upload.fields([
   { name: 'sound_file', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { name, is_free } = req.body;
+    const { name } = req.body;
     const draw_animation = req.files['image']?.[0]?.buffer || null; // PNG/JPG
     const real_animation = req.files['draw_animation']?.[0]?.buffer || null; // GIF
     const sound_file = req.files['sound_file']?.[0]?.buffer || null;
@@ -381,7 +383,7 @@ app.post('/api/cards', upload.fields([
       return res.status(400).json({ error: "Tous les champs sont obligatoires." });
     }
 
-    await createCard(name, is_free, draw_animation, real_animation, sound_file);
+    await createCard(name, draw_animation, real_animation, sound_file);
     res.status(201).json({ message: "Carte créée avec succès." });
   } catch (err) {
     console.error("Erreur lors de la création de la carte :", err);
@@ -408,7 +410,7 @@ app.put('/api/cards/:id', upload.fields([
   { name: 'sound_file', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { name, is_free } = req.body;
+    const { name } = req.body;
     const cardId = req.params.id;
 
     // Récupère les fichiers si présents
@@ -419,7 +421,6 @@ app.put('/api/cards/:id', upload.fields([
     await updateCard(
       cardId,
       name,
-      is_free,
       draw_animation,
       real_animation,
       sound_file
