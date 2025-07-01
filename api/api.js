@@ -10,8 +10,10 @@ const {
   getUsersNumber,
   getUsersEvolution,
   getAllUsers,
+  getUserById,
   updateUser,
   deleteUser, 
+  isPremium,
   /*category*/
   getAllCategories,
   getCardsByCategory,
@@ -76,6 +78,21 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// Recuperation d'un utilisateur par son ID
+app.get('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await getUserById(id);
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé." });
+    }
+    res.status(200).json(user);
+  } catch (err) {
+    console.error("Erreur lors de la récupération de l'utilisateur :", err);
+    res.status(500).json({ error: "Erreur lors de la récupération de l'utilisateur." });
+  }
+});
+
 // Connexion d'un utilisateur
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
@@ -125,6 +142,16 @@ app.patch('/api/users/:userId', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la modification de l'utilisateur :", err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/user/:id/premium', async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const premium = await isPremium(userId);
+    res.status(200).json({ premium });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la vérification premium" });
   }
 });
 

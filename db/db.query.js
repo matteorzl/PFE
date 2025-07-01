@@ -70,6 +70,7 @@ async function getUsersNumber() {
   }
 }
 
+
 // Récupérer l'évolution du nombre d'utilisateurs dans le temps
 async function getUsersEvolution() {
   const query = `
@@ -162,6 +163,27 @@ const deleteUser = async (userId,role) => {
     con.end();
   }
 };
+
+async function isPremium(id) {
+  const query = `
+    SELECT 1 FROM billing
+    WHERE user_id = ?
+      AND MONTH(updated_at) = MONTH(NOW())
+      AND YEAR(updated_at) = YEAR(NOW())
+    LIMIT 1
+  `;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [id]);
+    await con.end();
+    // Si aucun enregistrement, retourne false (pas d'erreur)
+    return rows.length > 0;
+  } catch (err) {
+    console.error("Erreur lors de la vérification premium :", err);
+    // Si erreur SQL, tu peux choisir de retourner false ou relancer l'erreur
+    return false;
+  }
+}
 
 // Récupérer un utilisateur par son id
 async function getUserById(id) {
@@ -499,6 +521,7 @@ module.exports = {
   getUserById,   
   getAllUsers,
   getTherapistIdByUserId,
+  isPremium,
 
   getAllCategories,
   getCategoryById,

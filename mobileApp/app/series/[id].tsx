@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, SafeAreaView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
@@ -24,7 +24,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { id: categoryId } = useLocalSearchParams<{ id: string }>();
 
   useEffect(() => {
-    fetch(`http://192.168.1.60:3001/api/categories/${categoryId}/cards`)
+    fetch(`http://172.20.10.2:3001/api/categories/${categoryId}/cards`)
       .then(res => res.json())
       .then(data => setCards(data))
       .catch(() => setCards([]));
@@ -89,9 +89,17 @@ export default function HomeScreen({ navigation }: Props) {
   const card = cards[currentIndex];
 
   return (
-    <View style={{ flex: 1, backgroundColor: 'black' }}>
+    <View style={{ flex: 1,}}>
+      {card && (
+        <Image
+          source={{ uri: showReal[card.id] ? card.real_animation : card.draw_animation }}
+          style={styles.backgroundImage}
+          blurRadius={30}
+        />
+      )}
       <View style={{ position: 'absolute', top: 50, left: 16, zIndex: 10 }}>
-        <TouchableOpacity style={{backgroundColor: 'white', padding: 2, borderRadius: 50 }} onPress={async () => {
+        <TouchableOpacity 
+        onPress={async () => {
           if (soundRef.current) {
                 await soundRef.current.stopAsync();
                 await soundRef.current.unloadAsync();
@@ -101,7 +109,7 @@ export default function HomeScreen({ navigation }: Props) {
           router.push('/series');
         }
           }>
-          <Ionicons name="arrow-back-circle" size={40} color="#1a3cff" />
+          <Ionicons name="arrow-back" size={40} color="#fff" />
         </TouchableOpacity>
       </View>
       {card && (
@@ -120,7 +128,6 @@ export default function HomeScreen({ navigation }: Props) {
               setCurrentIndex((prev) => (prev + 1) % cards.length);
             }}
             disabled={cards.length <= 1}
-            style={{ backgroundColor: 'white', padding: 4, borderRadius: 50 }}
           >
             <Image
               source={{ uri: showReal[card.id] ? card.real_animation : card.draw_animation }}
@@ -139,25 +146,14 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.cardTitle}>{card.name}</Text>
           </View>
           {/* Overlay des boutons en bas */}
-          <View style={{
-            position: 'absolute',
-            bottom: 40,
-            left: 0,
-            right: 0,
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 18,
-            zIndex: 2,
-            width: '100%',
-          }}>
+          <View style={styles.tabBar}>
             {/* Bouton Play */}
             <TouchableOpacity onPress={() => handlePlaySound(card, currentIndex)}>
-              <Ionicons name={playingIndex === currentIndex ? "pause-circle" : "play-circle"} size={50} color="#FFD600" style={{backgroundColor: 'white', padding: 4, borderRadius: 50}}/>
+              <Ionicons name={playingIndex === currentIndex ? "pause" : "play"} size={40} color="#1a3cff"/>
             </TouchableOpacity>
             {/* Bouton Switch Image */}
-            <TouchableOpacity onPress={() => handleToggleImage(card.id)} style={{backgroundColor: 'white', padding: 4, borderRadius: 50}}>
-              <Ionicons name="swap-horizontal" size={50} color="#1a3cff" />
+            <TouchableOpacity onPress={() => handleToggleImage(card.id)}>
+              <Ionicons name="swap-horizontal" size={40} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -167,21 +163,29 @@ export default function HomeScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+    zIndex: 0,
+    transform: [{ scale: 1 }], // Zoom
+  },
   card: {
     height: "100%",
     borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginTop:5,
+    marginBottom: 10,
     elevation: 3,
     flexDirection: 'column',
     justifyContent: 'center',
     position: 'relative',
-    backgroundColor: 'black'
   },
   cardImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'contain',
+    width: '99%',
+    height: '85%',
+    marginTop: 50,
+    borderRadius: 16,
     alignSelf: 'center',
   },
   cardOverlay: {
@@ -203,5 +207,26 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignSelf:'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingVertical: 10,
+    borderRadius: 26,
+    position: 'absolute',
+    bottom: 10,
+    margin:10,
+    elevation: 10,
+    width:'70%',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -2 },
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+    borderColor:'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1,
   }
 });

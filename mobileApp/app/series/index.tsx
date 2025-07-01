@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, Dimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming 
+} from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type RootStackParamList = {
   Home: undefined;
@@ -12,14 +18,63 @@ type RootStackParamList = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
+type Category = {
+  id: string;
+  name: string;
+  image: string;
+  progress: number;
+};
+
 export default function HomeScreen({ navigation }: Props) {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const router = useRouter();
+   const [panelOpen, setPanelOpen] = useState(false);
+
+  const collapsedHeight = 0;
+  const expandedHeight = Dimensions.get('window').height * 0.55;
+  const panelHeight = useSharedValue(collapsedHeight);
+
+  const animatedPanelStyle = useAnimatedStyle(() => ({
+    height: withTiming(panelHeight.value, { duration: 300 }),
+  }));
+
+  const openPanel = () => {
+    setPanelOpen(true);
+    panelHeight.value = expandedHeight;
+  };
+
+  const closePanel = () => {
+    panelHeight.value = collapsedHeight;
+    setTimeout(() => setPanelOpen(false), 300);
+  };
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await AsyncStorage.getItem('userId');
+      setUserId(id);
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(()=> {
+    if (!userId) return;
+  fetch(`http://172.20.10.2:3001/api/user/${userId}/premium`)
+    .then(res => res.json())
+    .then(data => {
+      // data.premium sera true ou false selon la réponse du backend
+      setIsPremium(data.premium);
+    })
+    .catch(() => {
+      setIsPremium(false); // ou gère l'erreur comme tu veux
+    });
+}, [userId]);
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
-    fetch('http://192.168.1.60:3001/api/categories')
+    fetch('http://172.20.10.2:3001/api/categories')
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setCategories([]));
@@ -38,8 +93,8 @@ export default function HomeScreen({ navigation }: Props) {
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 24 }}>
         <Image source={require('@/assets/images/Logo.png')} style={styles.logo} />
         <Text style={{ fontSize: 26, fontWeight: 'bold', textAlign: 'center', flex: 1 }}>Séries</Text>
-        <TouchableOpacity onPress={() => navigation.replace('Login')}>
-          <Ionicons name="log-out-outline" size={28} color="#1a3cff" />
+        <TouchableOpacity onPress={() => userId && router.replace(`/users/${userId}` as any)}>
+          <Ionicons name="person-circle-outline" size={40} color="#1a3cff" />
         </TouchableOpacity>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', margin: 24, marginBottom: 10 }}>
@@ -76,6 +131,43 @@ export default function HomeScreen({ navigation }: Props) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      {!isPremium && (
+        <>
+          <TouchableOpacity
+            style={styles.premiumBanner}
+            activeOpacity={0.85}
+            onPress={openPanel}
+          >
+            <Text style={styles.premiumBannerText}>
+              Passe 👑 
+              <Text style={styles.premiumWord}>Premium </Text>
+              👑 pour débloquer toutes les fonctionnalités !
+            </Text>
+          </TouchableOpacity>
+          {panelOpen && (
+            <Pressable
+              style={styles.panelOverlay}
+              onPress={closePanel}
+            >
+              <Animated.View style={[styles.animatedPanel, animatedPanelStyle]}>
+                <Text style={styles.panelTitle}>Passez Premium 👑</Text>
+                <Text style={styles.panelContent}>
+                  Profitez de toutes les fonctionnalités, séries exclusives, et plus encore !
+                </Text>
+                <TouchableOpacity
+                  style={styles.panelButton}
+                  onPress={() => {
+                    closePanel();
+                    router.push('/payment' as any);
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>S'abonner</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </Pressable>
+          )}
+        </>
+      )}
     </View>
   );
 }
@@ -140,6 +232,30 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
   },
+  premiumBanner: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#1a3cff',
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+    elevation: 12,
+  },
+  premiumBannerText: {
+    color: '#fff',
+    fontWeight: 'light',
+    fontSize: 16,
+    marginBottom:3,
+    textAlign: 'center',
+  },
+  premiumWord:{
+    color: 'rgb(180, 177, 3)',
+    fontSize: 18,
+    fontWeight:'bold',
+  },
   progressValue: {
     color: '#fff',
     fontWeight: 'bold',
@@ -148,5 +264,41 @@ const styles = StyleSheet.create({
     textShadowColor: '#000',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
+  },
+   panelOverlay: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0, top: 0,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    justifyContent: 'flex-end',
+    zIndex: 200,
+  },
+  animatedPanel: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 24,
+    elevation: 10,
+    justifyContent: 'flex-start',
+  },
+  panelTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  panelContent: {
+    fontSize: 16,
+    color: '#444',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  panelButton: {
+    backgroundColor: '#1a3cff',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent:'flex-end',
+    marginBottom: 8,
   },
 });

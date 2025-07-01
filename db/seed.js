@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const config = require('./db.config');
 
 const users = [
   {
@@ -158,11 +159,11 @@ const patientCategoryLinks = [
 
 async function main() {
   const conn = await mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '', // adapte si besoin
-    database: 'soundswipes',
-    multipleStatements: true
+    host: config.host,
+    database: config.database,
+    port: config.port,
+    user: config.user,
+    password: config.password,
   });
 
   // Désactiver les contraintes de clés étrangères
