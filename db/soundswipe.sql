@@ -35,7 +35,6 @@ CREATE TABLE `card` (
   `draw_animation` longblob DEFAULT NULL,
   `real_animation` longblob DEFAULT NULL,
   `is_validated` int(11) DEFAULT NULL,
-  `is_free` tinyint(1) DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -53,6 +52,7 @@ CREATE TABLE `category` (
   `description` varchar(100) DEFAULT NULL,
   `image` longblob DEFAULT NULL,
   `created_by` int(11) DEFAULT NULL,
+  `is_free` tinyint(1) DEFAULT NULL,
   `difficulty` ENUM('FACILE', 'MOYEN', 'DIFFICILE') DEFAULT NULL,
   `followed` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,

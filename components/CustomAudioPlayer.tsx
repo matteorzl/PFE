@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button, Slider } from "@heroui/react";
 
-export function CustomAudioPlayer({ src }: { src: string }) {
+export function CustomAudioPlayer({ src, color = "#eee" }: { src: string, color?: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -26,7 +26,7 @@ export function CustomAudioPlayer({ src }: { src: string }) {
   }, [audioRef]);
 
   return (
-    <div className="flex flex-col mt-3 gap-1 rounded-xl bg-white/80 shadow p-3">
+    <div className="flex flex-col mt-3 gap-1 p-3">
       <audio
         controls
         ref={audioRef}
@@ -42,12 +42,13 @@ export function CustomAudioPlayer({ src }: { src: string }) {
           isIconOnly
           size="sm"
           variant="light"
-          onClick={handlePlayPause}
+          onPress={handlePlayPause}
+          style={{ color }} 
         >
           {isPlaying ? (
-            <svg width={24} height={24} fill="none" stroke="currentColor" strokeWidth={2}><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            <svg width={24} height={24} fill="white" stroke="none"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
           ) : (
-            <svg width={24} height={24} fill="none" stroke="currentColor" strokeWidth={2}><polygon points="6,4 20,12 6,20 6,4"/></svg>
+            <svg width={24} height={24} fill="white" stroke="none"><polygon points="6,4 20,12 6,20 6,4"/></svg>
           )}
         </Button>
         <Slider
@@ -58,18 +59,14 @@ export function CustomAudioPlayer({ src }: { src: string }) {
               audioRef.current.currentTime = (v / 100) * duration;
             }
           }}
-          classNames={{
-            track: "bg-default-500/30",
-            thumb: "w-2 h-2 after:w-2 after:h-2 after:bg-foreground",
-          }}
-          color="foreground"
+          color="white"
           size="sm"
         />
       </div>
-      <div className="flex justify-between">
-        <p className="text-small">{formatTime(current)}</p>
-        <p className="text-small text-foreground/50">{formatTime(duration)}</p>
-      </div>
+        <div className="flex justify-between">
+          <p className="text-small" style={{ color }}>{formatTime(current)}</p>
+          <p className="text-small" style={{ color }}>{formatTime(duration)}</p>
+        </div>
     </div>
   );
 }

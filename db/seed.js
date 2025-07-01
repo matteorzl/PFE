@@ -42,10 +42,10 @@ const users = [
 ];
 
 const categories = [
-  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1 },
-  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1 },
-  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2 },
-  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2 }
+  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1, is_free: 1 },
+  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1, is_free: 1 },
+  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2, is_free: 1 },
+  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2, is_free: 0 }
 ];
 
 const cards = [
@@ -53,7 +53,6 @@ const cards = [
     name: 'Chat',
     order_list: 1,
     is_validated: 1,
-    is_free: 1,
     created_by: 1,
     sound_file: 'cat.mp3',
     draw_animation: 'cat.jpg',
@@ -63,7 +62,6 @@ const cards = [
     name: 'Chien',
     order_list: 2,
     is_validated: 1,
-    is_free: 0,
     created_by: 1,
     sound_file: 'dog.mp3',
     draw_animation: 'dog.jpg',
@@ -73,7 +71,6 @@ const cards = [
     name: 'Voiture',
     order_list: 1,
     is_validated: 1,
-    is_free: 1,
     created_by: 1,
     sound_file: 'car.mp3',
     draw_animation: 'car.jpg',
@@ -83,7 +80,6 @@ const cards = [
     name: 'Train',
     order_list: 2,
     is_validated: 1,
-    is_free: 0,
     created_by: 1,
     sound_file: 'train.mp3',
     draw_animation: 'train.jpeg',
@@ -93,7 +89,6 @@ const cards = [
     name: 'Pluie',
     order_list: 1,
     is_validated: 1,
-    is_free: 1,
     created_by: 2,
     sound_file: 'rain.mp3',
     draw_animation: 'rain.jpeg',
@@ -103,7 +98,6 @@ const cards = [
     name: 'Vent',
     order_list: 2,
     is_validated: 1,
-    is_free: 0,
     created_by: 2,
     sound_file: 'wind.mp3',
     draw_animation: 'wind.jpg',
@@ -113,7 +107,6 @@ const cards = [
     name: 'Piano',
     order_list: 1,
     is_validated: 1,
-    is_free: 1,
     created_by: 2,
     sound_file: 'piano.mp3',
     draw_animation: 'piano.JPG',
@@ -123,7 +116,6 @@ const cards = [
     name: 'Guitare',
     order_list: 2,
     is_validated: 1,
-    is_free: 0,
     created_by: 2,
     sound_file: 'guitar.mp3',
     draw_animation: 'guitar.webp',
@@ -160,7 +152,7 @@ async function main() {
   const conn = await mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '', // adapte si besoin
+    password: '',
     database: 'soundswipes',
     multipleStatements: true
   });
@@ -235,9 +227,9 @@ async function main() {
     }
 
     const [result] = await conn.execute(
-      `INSERT INTO category (name, description, image, created_by)
-      VALUES (?, ?, ?, ?)`,
-      [cat.name, cat.description, imageBuffer, createdByUserId]
+      `INSERT INTO category (name, description, image, created_by, is_free)
+      VALUES (?, ?, ?, ?, ?)`,
+      [cat.name, cat.description, imageBuffer, createdByUserId, cat.is_free]
     );
     categoryIds.push(result.insertId);
   }
@@ -277,13 +269,12 @@ async function main() {
     const createdByTherapistId = therapistIds[therapistIndex];
 
     const [result] = await conn.execute(
-      `INSERT INTO card (name, order_list, is_validated, is_free, created_by, sound_file, draw_animation, real_animation)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO card (name, order_list, is_validated, created_by, sound_file, draw_animation, real_animation)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         card.name,
         card.order_list,
         card.is_validated,
-        card.is_free,
         createdByTherapistId,
         soundBuffer,
         drawBuffer,
