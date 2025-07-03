@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { 
@@ -22,12 +23,14 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://192.168.1.60:3001/api/login', {
+      const response = await axios.post('http://172.20.10.2:3001/api/login', {
         email,
         password,
       });
 
       if (response.status === 200) {
+        const userId = response.data.user.id;
+        await AsyncStorage.setItem('userId', String(userId));
         router.push('/series' as any);
       } else {
         Alert.alert('Erreur', 'Connexion échouée');
