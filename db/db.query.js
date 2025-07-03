@@ -196,6 +196,25 @@ async function getAllUsers() {
   }
 }
 
+async function getCategoriesOrderedForUser(userId) {
+  const con = await createConnection();
+  const [rows] = await con.query(
+    `SELECT * FROM category ORDER BY order_list ASC, name ASC`
+  );
+  await con.end();
+  return rows;
+}
+
+async function getCardValidationStatusForUser(userId, cardId) {
+  const con = await createConnection();
+  const [rows] = await con.query(
+    `SELECT is_validated FROM card_validation WHERE user_id = ? AND card_id = ? LIMIT 1`,
+    [userId, cardId]
+  );
+  await con.end();
+  return rows.length > 0 ? rows[0].is_validated : 0;
+}
+
 async function getAllCategories() {
   const query = `SELECT * FROM category`;
 
@@ -495,6 +514,9 @@ module.exports = {
   getUserById,   
   getAllUsers,
   getTherapistIdByUserId,
+  getCategoriesOrderedForUser,
+
+  getCardValidationStatusForUser,
 
   getAllCategories,
   getCategoryById,

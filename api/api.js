@@ -11,7 +11,10 @@ const {
   getUsersEvolution,
   getAllUsers,
   updateUser,
-  deleteUser, 
+  deleteUser,
+  getCategoriesOrderedForUser,
+  /*patient*/
+  getCardValidationStatusForUser,
   /*category*/
   getAllCategories,
   getCardsByCategory,
@@ -156,6 +159,31 @@ app.get('/api/users', authenticateToken, async (req, res) => {
     res.status(200).json(users);
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs." });
+  }
+});
+
+app.get('/api/user/:userId/categories', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const categories = await db.getCategoriesOrderedForUser(userId);
+    res.json(categories);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la récupération des séries de l'utilisateur" });
+  }
+});
+
+//////////////
+/* PATIENT */
+////////////
+app.get('/api/patient/:userId/card/:cardId/status', async (req, res) => {
+  const { userId, cardId } = req.params;
+  try {
+    const status = await db.getCardValidationStatusForUser(userId, cardId);
+    res.json({ is_validated: status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la récupération du statut de la carte" });
   }
 });
 

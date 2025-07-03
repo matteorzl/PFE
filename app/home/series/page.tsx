@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Spinner, Card, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
+import { Spinner, Card, Input, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
 import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
 import { CreateModal } from "@/components/category/CreateModal"; // Ajoute cet import
@@ -14,6 +14,7 @@ interface Category {
   image: string;
   created_by: number;
   is_free: number; 
+  difficulty: string | number;
 }
 
 export const PlusIcon = (props: any) => (
@@ -24,6 +25,31 @@ export const PlusIcon = (props: any) => (
     </g>
   </svg>
 );
+
+const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
+  let yellow = 1;
+  if (difficulty === "moyen" || difficulty === 2) yellow = 2;
+  if (difficulty === "difficile" || difficulty === 3) yellow = 3;
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3].map((i) => (
+        <svg
+          key={i}
+          width={20}
+          height={20}
+          viewBox="0 0 20 20"
+          fill={i <= yellow ? "#FFD700" : "#fff"}
+          stroke="#FFD700"
+        >
+          <polygon
+            points="10,2 12.5,7.5 18,8 14,12 15,18 10,15 5,18 6,12 2,8 7.5,7.5"
+            strokeWidth={i <= yellow ? 0 : 1}
+          />
+        </svg>
+      ))}
+    </div>
+  );
+};
 
 const CrownIcon = () => (
   <svg
@@ -99,6 +125,8 @@ export default function SeriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
+  const [searchValue, setSearchValue] = useState(""); 
   const[isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Ajoute cet état
@@ -123,6 +151,20 @@ export default function SeriesPage() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    setFilteredCategories(categories);
+  }, [categories]);
+
+  useEffect(() => {
+    let filtered = [...categories];
+    if (searchValue) {
+      filtered = filtered.filter((cat) =>
+        cat.name.toLowerCase().includes(searchValue.toLowerCase())
+      );
+    }
+    setFilteredCategories(filtered);
+  }, [searchValue, categories]);
 
   const handleCardClick = (categoryId: number, categoryName: string) => {
     const encodedName = encodeURIComponent(categoryName);
@@ -167,9 +209,18 @@ export default function SeriesPage() {
           Créer une série
         </Button>
       </h1>
+
+      <div className="flex justify-between items-center mb-4">
+        <Input
+          placeholder="Rechercher une série..."
+          value={searchValue}
+          onValueChange={setSearchValue}
+          className="w-full max-w-md"
+        />
+      </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-        {categories.map((category) => (
+        {filteredCategories.map((category) => (
           <Card
             key={category.id}
             isPressable
@@ -178,6 +229,13 @@ export default function SeriesPage() {
               backgroundImage: `url(${category.image})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
+              border: category.is_free === 0
+                ? "5px solid rgba(255, 215, 0, 0.9)"
+                : undefined,
+              borderRadius: "0.5rem",
+              boxShadow: category.is_free === 0
+                ? "0 0 16px 4px rgba(255, 215, 0, 0.7), 0 2px 8px rgba(0,0,0,0.15)"
+                : undefined,
             }}
             onPress={() => handleCardClick(category.id, category.name)}
           >
@@ -221,6 +279,9 @@ export default function SeriesPage() {
             {/* Overlay pour lisibilité du texte */}
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
             <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <div className="absolute bottom-12 z-30 flex items-center">
+                <StarsDifficulty difficulty={category.difficulty} />
+              </div>
               <h4
                 className="text-white font-bold uppercase text-center drop-shadow-lg"
                 style={{

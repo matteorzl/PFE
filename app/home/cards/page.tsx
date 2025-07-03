@@ -2,7 +2,7 @@
 
 import ColorThief from "color-thief-browser";
 import { useEffect, useRef, useState } from "react";
-import { Spinner, Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { Skeleton, Breadcrumbs, BreadcrumbItem, Input, Card, CardBody, Image, Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import CreateModal from "@/components/card/CreateModal";
 import { EditModal } from "@/components/card/EditModal";
@@ -232,14 +232,6 @@ export default function CardsPage() {
     await fetchCards();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner size="lg"/>
-      </div>
-    );
-  }
-
   return (
     <div className="gap-4 p-4">
       <Breadcrumbs className="mb-4">
@@ -251,8 +243,12 @@ export default function CardsPage() {
       <h1 className="text-2xl font-bold mb-4 w-100 flex items-baseline gap-2 justify-between">
         <span className="flex items-baseline gap-2">
           Cartes
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-s font-medium bg-blue-100 text-blue-800">
-            {cards.length}
+         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-s font-medium bg-blue-100 text-blue-800 min-w-[32px] justify-center">
+            {loading ? (
+              <Skeleton className="h-8 rounded-full" />
+            ) : (
+              cards.length
+            )}
           </span>
         </span>
         <Button 
@@ -334,225 +330,230 @@ export default function CardsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
-        {filteredCards.map((card) => {
-          const lightColor = cardLightColors[card.id] || "#eee";
-          const textColor = isColorLight(lightColor) ? "#222" : "#fff";
-          return (
-            <Card
-              key={card.id}
-              isBlurred
-              style={{
-                background: cardGradients[card.id] || "linear-gradient(135deg, #eee, #ccc)",
-                color: textColor,
-              }}
-              className="border-none bg-background/60 dark:bg-default-100/50 max-w-[600px] cursor-pointer relative"
-              shadow="sm"
-            >
-              {/* Dropdown en haut à droite */}
-              <div 
-                className="absolute top-2 right-2 flex justify-end w-full z-10"
+        {loading
+          ? Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-[180px] w-full rounded-xl" />
+            ))
+          : filteredCards.map((card) => {
+            const lightColor = cardLightColors[card.id] || "#eee";
+            const textColor = isColorLight(lightColor) ? "#222" : "#fff";
+            return (
+              <Card
+                key={card.id}
+                isBlurred
+                style={{
+                  background: cardGradients[card.id] || "linear-gradient(135deg, #eee, #ccc)",
+                  color: textColor,
+                }}
+                className="border-none bg-background/60 dark:bg-default-100/50 max-w-[600px] cursor-pointer relative"
+                shadow="sm"
               >
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button
-                      variant="light"
-                      className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0"
-                      style={{ color: textColor }}
-                    >...</Button>
-                  </DropdownTrigger>
-                  <DropdownMenu>
-                    <DropdownItem
-                      key="edit"
-                      startContent={<EditDocumentIcon />}
-                      onClick={() => handleEditClick(card)}
-                    >
-                      Modifier
-                    </DropdownItem>
-                    <DropdownItem
-                      key="delete"
-                      className="text-danger"
-                      color="danger"
-                      startContent={<DeleteDocumentIcon />}
-                      onClick={() => handleDeleteClick(card)}
-                    >
-                      Supprimer
-                    </DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
+                {/* Dropdown en haut à droite */}
+                <div 
+                  className="absolute top-2 right-2 flex justify-end w-full z-10"
+                >
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button
+                        variant="light"
+                        className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0"
+                        style={{ color: textColor }}
+                      >...</Button>
+                    </DropdownTrigger>
+                    <DropdownMenu>
+                      <DropdownItem
+                        key="edit"
+                        startContent={<EditDocumentIcon />}
+                        onClick={() => handleEditClick(card)}
+                      >
+                        Modifier
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger"
+                        color="danger"
+                        startContent={<DeleteDocumentIcon />}
+                        onClick={() => handleDeleteClick(card)}
+                      >
+                        Supprimer
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
 
-              <CardBody>
-                <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
-                  <div className="relative col-span-6 md:col-span-4 flex flex-col items-center">
-                    <img
-                      src={
-                        tabsState[card.id] === "gif"
-                          ? `http://localhost:3001/api/cards/${card.id}/animation`
-                          : `http://localhost:3001/api/cards/${card.id}/image`
-                      }
-                      alt=""
-                      crossOrigin="anonymous"
-                      style={{ display: "none" }}
-                      onLoad={e => handleImageLoad(card.id, e.currentTarget)}
-                    />
-                    <Image
-                      alt={`Image de ${card.name}`}
-                      className="object-cover"
-                      height={150}
-                      shadow="md"
-                      src={
-                        tabsState[card.id] === "gif"
-                          ? `http://localhost:3001/api/cards/${card.id}/animation`
-                          : `http://localhost:3001/api/cards/${card.id}/image`
-                      }
-                      width="100%"
-                    />
-                    <div className="flex gap-2 mt-2 justify-center">
-                      <Button
-                        type="button"
-                        isIconOnly
-                        className={`p-2 rounded-full border transition
-                          ${tabsState[card.id] !== "gif"
-                            ? " text-blue-600"
-                            : "bg-transparent border-transparent"}
-                        `}
-                        title="Voir l'image"
-                        onPress={() => handleTabClick(card.id, "image")}
-                        style={{
-                          color: tabsState[card.id] === "image"
-                            ? undefined
-                            : lightColor
-                        }}
-                      >
-                        <ImageIcon />
-                      </Button>
-                      <Button
-                        type="button"
-                        isIconOnly
-                        className={`p-2 rounded-full border transition
-                          ${tabsState[card.id] === "gif"
-                            ? " text-blue-600"
-                            : "bg-transparent border-transparent"}
-                        `}
-                        title="Voir le GIF"
-                        onPress={() => handleTabClick(card.id, "gif")}
-                        style={{
-                          color: tabsState[card.id] === "gif"
-                            ? undefined
-                            : lightColor
-                        }}
-                      >
-                        <GifIcon />
-                      </Button>
+                <CardBody>
+                  <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
+                    <div className="relative col-span-6 md:col-span-4 flex flex-col items-center">
+                      <img
+                        src={
+                          tabsState[card.id] === "gif"
+                            ? `http://localhost:3001/api/cards/${card.id}/animation`
+                            : `http://localhost:3001/api/cards/${card.id}/image`
+                        }
+                        alt=""
+                        crossOrigin="anonymous"
+                        style={{ display: "none" }}
+                        onLoad={e => handleImageLoad(card.id, e.currentTarget)}
+                      />
+                      <Image
+                        alt={`Image de ${card.name}`}
+                        className="object-cover"
+                        height={150}
+                        shadow="md"
+                        src={
+                          tabsState[card.id] === "gif"
+                            ? `http://localhost:3001/api/cards/${card.id}/animation`
+                            : `http://localhost:3001/api/cards/${card.id}/image`
+                        }
+                        width="100%"
+                      />
+                      <div className="flex gap-2 mt-2 justify-center">
+                        <Button
+                          type="button"
+                          isIconOnly
+                          className={`p-2 rounded-full border transition
+                            ${tabsState[card.id] !== "gif"
+                              ? " text-blue-600"
+                              : "bg-transparent border-transparent"}
+                          `}
+                          title="Voir l'image"
+                          onPress={() => handleTabClick(card.id, "image")}
+                          style={{
+                            color: tabsState[card.id] === "image"
+                              ? undefined
+                              : lightColor
+                          }}
+                        >
+                          <ImageIcon />
+                        </Button>
+                        <Button
+                          type="button"
+                          isIconOnly
+                          className={`p-2 rounded-full border transition
+                            ${tabsState[card.id] === "gif"
+                              ? " text-blue-600"
+                              : "bg-transparent border-transparent"}
+                          `}
+                          title="Voir le GIF"
+                          onPress={() => handleTabClick(card.id, "gif")}
+                          style={{
+                            color: tabsState[card.id] === "gif"
+                              ? undefined
+                              : lightColor
+                          }}
+                        >
+                          <GifIcon />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col col-span-6 md:col-span-8">
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col gap-0">
-                        <div className="flex items-center gap-2">
-                          <h3
-                            className="font-semibold"
-                            style={{ color: textColor }}
-                          >
-                          {card.name}
-                          </h3>
-                          {card.is_validated === 1 ? (
-                            <div title="Validé par l'administrateur">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="1.5"
-                                stroke="currentColor"
-                                className="w-5 h-5 text-green-500"
+                    <div className="flex flex-col col-span-6 md:col-span-8">
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col gap-0">
+                          <div className="flex items-center gap-2">
+                            <h3
+                              className="font-semibold"
+                              style={{ color: textColor }}
+                            >
+                            {card.name}
+                            </h3>
+                            {card.is_validated === 1 ? (
+                              <div title="Validé par l'administrateur">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.5"
+                                  stroke="currentColor"
+                                  className="w-5 h-5 text-green-500"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                  />
+                                </svg>
+                              </div>
+                            ) : card.is_validated === 2 ? (
+                              <div title="Refusé par l'administrateur">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.5"
+                                  stroke="currentColor"
+                                  className="w-5 h-5 text-red-500"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                  />
+                                </svg>
+                              </div>
+                            ) : (
+                              <div title="En attente de validation par l'administrateur">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.5"
+                                  stroke="currentColor"
+                                  className="w-5 h-5 text-yellow-500"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                  />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-center justify-center w-full mt-2">
+                        <div className="w-full">
+                          <CustomAudioPlayer 
+                            src={`http://localhost:3001/api/cards/${card.id}/sound`} 
+                            color={textColor}
+                          />
+                        </div>
+                        <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
+                          {(card.is_validated === 0 || card.is_validated === null) ? (
+                            <>
+                              <Button
+                                title="Valider"
+                                className="rounded-full bg-green-100/50 hover:bg-green-200 transition"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleValidateCard(card.id, 1);
+                                }}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
-                              </svg>
-                            </div>
-                          ) : card.is_validated === 2 ? (
-                            <div title="Refusé par l'administrateur">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="1.5"
-                                stroke="currentColor"
-                                className="w-5 h-5 text-red-500"
+                                <ValidateIcon />
+                              </Button>
+                              <Button
+                                title="Refuser"
+                                className="rounded-full bg-red-100/50 hover:bg-red-200 transition"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleValidateCard(card.id, 2);
+                                }}
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
-                              </svg>
-                            </div>
-                          ) : (
-                            <div title="En attente de validation par l'administrateur">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="1.5"
-                                stroke="currentColor"
-                                className="w-5 h-5 text-yellow-500"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
-                              </svg>
-                            </div>
-                          )}
+                                <RefuseIcon />
+                              </Button>
+                            </>
+                          ) : null}
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex flex-col items-center justify-center w-full mt-2">
-                      <div className="w-full">
-                        <CustomAudioPlayer 
-                          src={`http://localhost:3001/api/cards/${card.id}/sound`} 
-                          color={textColor}
-                        />
-                      </div>
-                      <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
-                        {(card.is_validated === 0 || card.is_validated === null) ? (
-                          <>
-                            <Button
-                              title="Valider"
-                              className="rounded-full bg-green-100/50 hover:bg-green-200 transition"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleValidateCard(card.id, 1);
-                              }}
-                            >
-                              <ValidateIcon />
-                            </Button>
-                            <Button
-                              title="Refuser"
-                              className="rounded-full bg-red-100/50 hover:bg-red-200 transition"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleValidateCard(card.id, 2);
-                              }}
-                            >
-                              <RefuseIcon />
-                            </Button>
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
                   </div>
-                </div>
-              </CardBody>
-            </Card>
-          );
-        })}
+                </CardBody>
+              </Card>
+            );
+          })
+        }
       </div>
       <CreateModal
         isOpen={isCreateModalOpen}
