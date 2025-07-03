@@ -1,3 +1,4 @@
+const { stripe } = require("../stripe-server");
 const express = require('express');
 const multer = require('multer');
 const upload = multer();
@@ -63,6 +64,30 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+app.post('/api/payment-sheet', async (req, res) => {
+  try {
+    const customer = await stripe.customers.create();
+    const ephemeralKey = await stripe.ephemeralKeys.create(
+      { customer: customer.id },
+      { apiVersion: '2025-06-30.basil' }
+    );
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 1000,
+      currency: "eur",
+      customer: customer.id
+    });
+
+    return res.status(201).json({
+      paymentIntent: paymentIntent.client_secret,
+      ephemeralKey: ephemeralKey.secret,
+      customer: customer.id
+    });
+  } catch (err) {
+    console.error("Stripe error:", err);
+    res.status(500).send({ error: err.message });
+  }
+});
 
 ////////////
 /* USERS */

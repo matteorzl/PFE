@@ -26,9 +26,11 @@ export default function DashboardPage() {
         const evolutionData = await evolutionResponse.json();
 
         setUserNumber(numberData.count);
-        setUserEvolution(evolutionData);
+        // Correction ici : toujours un tableau
+        setUserEvolution(Array.isArray(evolutionData) ? evolutionData : []);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setUserEvolution([]); // fallback en cas d'erreur
       } finally {
         setLoading(false);
       }
@@ -46,12 +48,14 @@ export default function DashboardPage() {
   }
 
   // Safe data transformation
-  const chartData = userEvolution
-    .filter(d => d && d.date && !isNaN(new Date(d.date).getTime()))
-    .map(d => ({
-      x: new Date(d.date),
-      y: Math.round(Number(d.count) || 0)
-    }));
+  const chartData = Array.isArray(userEvolution)
+    ? userEvolution
+        .filter(d => d && d.date && !isNaN(new Date(d.date).getTime()))
+        .map(d => ({
+          x: new Date(d.date),
+          y: Math.round(Number(d.count) || 0)
+        }))
+    : [];
 
   return (
     <div className="gap-4 p-4">
