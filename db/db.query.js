@@ -349,6 +349,25 @@ async function getTherapistIdByUserId(userId) {
   }
 }
 
+async function createUserPayment(payment){
+  const {userId, phone, line1, line2, city, zipcode} = payment
+  const query = `
+    INSERT INTO billing (user_id, phone, line1, line2, city, zipcode)
+    VALUES (?, ?, ?, ?, ?, ?);
+  `;
+  const values = [userId, phone, line1, line2, city, zipcode];
+
+  try {
+    const con = await createConnection();
+    const [result] = await con.execute(query, values);
+    await con.end();
+    return result;
+  } catch (err) {
+    console.error("Erreur lors de l'insertion du paiement :", err);
+    throw err;
+  }
+}
+
 // Supprimer une catégorie
 const deleteCategory = async (categoryId) => {
   const con = await createConnection();
@@ -565,6 +584,7 @@ module.exports = {
   getAllUsers,
   getTherapistIdByUserId,
   isPremium,
+  createUserPayment,
   getCategoriesOrderedForUser,
 
   getCardValidationStatusForUser,

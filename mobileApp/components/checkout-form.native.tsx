@@ -1,10 +1,15 @@
 import { useStripe } from "@stripe/stripe-react-native";
 import { useState } from "react";
-import { TouchableOpacity, Text, Alert } from "react-native";
-import * as Linking from "expo-linking"
+import { TouchableOpacity, Text, Alert, TextInput, View, StyleSheet } from "react-native";
+import * as Linking from "expo-linking";
+
+type CheckoutFormProps = {
+    userId: string;
+    onPaymentSuccess?: () => void;
+  };
 
 async function fetchPaymentSheetParams() {
-  const res = await fetch('http://172.20.10.2:3001/api/payment-sheet',{
+  const res = await fetch('http://172.20.10.2:3001/api/payment-sheet', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   });
@@ -12,57 +17,120 @@ async function fetchPaymentSheetParams() {
   return data;
 }
 
-export default function CheckoutForm(){
-      const { initPaymentSheet, presentPaymentSheet } = useStripe();
-      const [loading, setLoading] = useState(false);
+export default function CheckoutForm({ userId, onPaymentSuccess }: CheckoutFormProps) {
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [loading, setLoading] = useState(false);
 
-      const initializePaymentSheet = async () => {
-        const {paymentIntent, ephemeralKey, customer} = await fetchPaymentSheetParams();
-        const { error } = await initPaymentSheet({
-            merchantDisplayName: "SoundSwipes Inc.",
-            customerId: customer,
-            customerEphemeralKeySecret: ephemeralKey,
-            paymentIntentClientSecret: paymentIntent,
-            // Set `allowsDelayedPaymentMethods` to true if your business can handle payment
-            //methods that complete payment after a delay, like SEPA Debit and Sofort.
-            allowsDelayedPaymentMethods: true,
-            defaultBillingDetails: {
-                name: 'Jane Doe',
-                email: 'jenny.rosen@example.com',
-                phone:'888-888-888',
-            },
-            returnURL: Linking.createURL("stripe-redirect"),
-            });
-            console.log("error")
-            if (!error) {
-            setLoading(true);
+  const [phone, setPhone] = useState('');
+  const [line1, setLine1] = useState('');
+  const [line2, setLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [zipcode, setZipcode] = useState('');
+
+  const handlePayment = async () => {
+
+    if ( !phone || !line1 || !city || !zipcode) {
+        Alert.alert("Champs requis", "Merci de remplir tous les champs obligatoires.");
+        return;
+        }
+    setLoading(true);
+    const { paymentIntent, ephemeralKey, customer } = await fetchPaymentSheetParams();
+    const { error: initError } = await initPaymentSheet({
+        merchantDisplayName: "SoundSwipes Inc.",
+        customerId: customer,
+        customerEphemeralKeySecret: ephemeralKey,
+        paymentIntentClientSecret: paymentIntent,
+        allowsDelayedPaymentMethods: true,
+        defaultBillingDetails: {
+        phone,
+        address: {
+            line1,
+            line2,
+            city,
+            postalCode: zipcode,
+        }
+        },
+        returnURL: Linking.createURL("stripe-redirect"),
+    });
+    if (initError) {
+        setLoading(false);
+        Alert.alert("Erreur Stripe", initError.message);
+        return;
+    }
+    const { error: presentError } = await presentPaymentSheet();
+    setLoading(false);
+    if (presentError) {
+            Alert.alert("Erreur", presentError.message);
+        } else {
+            // Paiement Stripe OK, on enregistre les infos en base
+            try {
+                await fetch('http://172.20.10.2:3001/api/payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userId,
+                        phone,
+                        line1,
+                        line2,
+                        city,
+                        zipcode
+                    })
+                });
+                Alert.alert("Validé", "Votre paiement a été accepté et enregistré !");
+                if (onPaymentSuccess) onPaymentSuccess();
+            } catch (err) {
+                Alert.alert("Paiement OK", "Mais l'enregistrement en base a échoué.");
             }
         };
+    };
 
-        const openPaymentSheet = async () => {
-            const {error} = await presentPaymentSheet();
-            console.log(error)
-            if(error){
+  return (
+    <View>
+        <TextInput style={styles.inputZone} placeholder="Téléphone" value={phone} onChangeText={setPhone} />
+        <TextInput style={styles.inputZone} placeholder="Adresse (ligne 1)" value={line1} onChangeText={setLine1} />
+        <TextInput style={styles.inputZone} placeholder="Adresse (ligne 2)" value={line2} onChangeText={setLine2} />
+        <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+            <TextInput
+                placeholder="Ville"
+                value={city}
+                onChangeText={setCity}
+                style={[styles.inputZoneDouble, { marginRight: 3 }]}
+            />
+            <TextInput
+                placeholder="Code postal"
+                value={zipcode}
+                onChangeText={setZipcode}
+                style={styles.inputZoneDouble}
+            />
+        </View>
 
-            }else{
-                Alert.alert("Validé","Votre paiement a été accepté !")
-            }
-        };
+        <TouchableOpacity
+            style={{ backgroundColor: '#1a3cff', borderRadius: 8, paddingVertical: 12, alignItems: "center", marginBottom: 8 }}
+            onPress={handlePayment}
+            disabled={loading}
+        >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                {loading ? "Paiement en cours..." : "Payer"}
+            </Text>
+        </TouchableOpacity>
+    </View>
+  );
+}
 
-        return(
-        <>
-            <TouchableOpacity
-                style={{ backgroundColor: '#1a3cff', borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "flex-end", marginBottom: 8 }}
-                onPress={initializePaymentSheet}
-            >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>InitPayment</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-                style={{ backgroundColor: '#1a3cff', borderRadius: 8, paddingVertical: 12, alignItems: "center", justifyContent: "flex-end", marginBottom: 8 }}
-                onPress={openPaymentSheet}
-            >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Payment</Text>
-            </TouchableOpacity></>
-      )
+const styles = StyleSheet.create({
+inputZone:{
+    borderWidth:1, 
+    marginBottom:8, 
+    padding:8,
+    borderRadius:10,
+    borderColor: 'rgba(0,0,0,0.2)',
+},
+inputZoneDouble:{
+    flex: 1, 
+    borderWidth: 1, 
+    padding: 8, 
+    borderRadius:10,
+    borderColor: 'rgba(0,0,0,0.2)',
+}
 
-      }
+})

@@ -112,6 +112,7 @@ CREATE TABLE `patient_category` (
 CREATE TABLE `patient_card` (
   `patient_id` int(11) NOT NULL,
   `card_id` int(11) NOT NULL,
+  `category_id` int(11) NOT NULL,
   `is_validated` int(11) DEFAULT 0,
   `validated_at` DATETIME DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -172,6 +173,7 @@ CREATE TABLE `users` (
 --
 
 CREATE TABLE `billing` (
+  `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `street` varchar(100) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL,
@@ -224,6 +226,14 @@ ALTER TABLE `patient_category`
   ADD KEY `patient_category_category_FK` (`category_id`);
 
 --
+-- Index pour la table `patient_category`
+--
+ALTER TABLE `patient_card`
+  ADD KEY `patient_card_patient_FK` (`patient_id`),
+  ADD KEY `patient_card_card_FK` (`card_id`),
+  ADD KEY `patient_card_category_FK` (`category_id`);
+
+--
 -- Index pour la table `therapist`
 --
 ALTER TABLE `therapist`
@@ -247,7 +257,7 @@ ALTER TABLE `users`
 -- Index pour la table `users`
 --
 ALTER TABLE `billing`
-  ADD KEY `billing_user_FK` (`user_id`);
+  ADD PRIMARY KEY (`id`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -336,6 +346,7 @@ ALTER TABLE `billing`
 --
 ALTER TABLE `patient_card`
   ADD CONSTRAINT `patient_card_card_FK` FOREIGN KEY (`card_id`) REFERENCES `card` (`id`),
+  ADD CONSTRAINT 'patient_card_category_FR' FOREIGN KEY (`category_id`) REFERENCES `category`(`id`),
   ADD CONSTRAINT `patient_card_patient_FK` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`);
 
 --

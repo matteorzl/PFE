@@ -15,6 +15,7 @@ const {
   updateUser,
   deleteUser,
   isPremium,
+  createUserPayment,
   getCategoriesOrderedForUser,
   /*patient*/
   getCardValidationStatusForUser,
@@ -89,6 +90,21 @@ app.post('/api/payment-sheet', async (req, res) => {
   }
 });
 
+app.post('/api/payment' , async(req,res) => {
+  const payment = req.body 
+
+  try{
+    const result = await createUserPayment(payment)
+    res.status(201).json({message : "Paiment effectué avec succès"})
+  } 
+  catch (err) {
+    console.error("Erreur lors de l'enregistrement :", err);
+    res.status(500).json({ error: "Erreur lors de l'enregistrement de l'utilisateur." });
+  }
+
+});
+
+
 ////////////
 /* USERS */
 //////////
@@ -140,7 +156,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Récupérer le nombre d'utilisateurs
-app.get('/api/users/number', async (req, res) => {
+app.get('/api/total/users/number', async (req, res) => {
   try {
     const count = await getUsersNumber();
     res.status(200).json({ count });
@@ -151,7 +167,7 @@ app.get('/api/users/number', async (req, res) => {
 });
 
 // Récupérer l'évolution des utilisateurs
-app.get('/api/users/evolution', async (req, res) => {
+app.get('/api/evolution/users', async (req, res) => {
   try {
     const data = await getUsersEvolution();
     res.json(data);
