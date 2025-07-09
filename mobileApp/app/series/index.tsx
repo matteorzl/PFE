@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import  { Svg,Path, Rect, Circle } from 'react-native-svg';
+import  { Svg,Path, Rect, Circle, Polygon } from 'react-native-svg';
 import CheckoutForm from '@/components/checkout-form.native';
 
 type RootStackParamList = {
@@ -51,12 +51,46 @@ export default function HomeScreen({ navigation }: Props) {
     panelHeight.value = expandedHeight;
   };
 
+  const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
+    let yellow = 1;
+    if (difficulty === "MOYEN" || difficulty === 2) yellow = 2;
+    if (difficulty === "DIFFICILE" || difficulty === 3) yellow = 3;
+
+    return (
+      <View style={{ flexDirection: 'row', gap: 4 }}>
+        {[1, 2, 3].map((i) => (
+          <Svg
+            key={i}
+            width={20}
+            height={20}
+            viewBox="0 0 20 20"
+          >
+            <Polygon
+              points="10,2 12.5,7.5 18,8 14,12 15,18 10,15 5,18 6,12 2,8 7.5,7.5"
+              fill="rgba(0,0,0,1)"
+              stroke="none"
+              // Décale l’ombre de 1px en bas et à droite
+              transform="translate(1,1)"
+            />
+            <Polygon
+              points="10,2 12.5,7.5 18,8 14,12 15,18 10,15 5,18 6,12 2,8 7.5,7.5"
+              fill={i <= yellow ? "#FFD700" : "#eee"}
+              stroke="#FFC04C"
+              strokeWidth="1"
+            />
+          </Svg>
+        ))}
+      </View>
+    );
+  };
+
   const CrownIcon = () => (
     <Svg
       width={24}
       height={24}
       viewBox="0 0 64 64"
-      style={{ marginRight: 8 }}
+      style={{ marginRight: 8
+      }}
     >
       <Path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
       <Rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
@@ -167,11 +201,16 @@ export default function HomeScreen({ navigation }: Props) {
               />
               <View style={styles.cardOverlay} />
               <View style={styles.cardContent}>
-                
-                <Text style={styles.cardTitle}>{cat.is_free === 0 && <CrownIcon />}{cat.name}</Text>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.progressLabel}>Progression</Text>
-                  <Text style={styles.progressValue}>{cat.progress}%</Text>
+                <View>
+                  <Text style={styles.cardTitle}>
+                    {cat.is_free === 0 && <CrownIcon />}
+                    {cat.name}
+                  </Text>
+                  
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <StarsDifficulty difficulty={cat.difficulty} />
+                  <Text style={styles.progressLabel}>{cat.progress}%</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -269,7 +308,7 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 32,
     fontWeight: '600',
     textAlign: 'right',
     textShadowColor: '#000',
