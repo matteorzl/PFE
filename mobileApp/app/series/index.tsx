@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, Dimensions, Pressable } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, Dimensions, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -90,7 +90,19 @@ export default function HomeScreen({ navigation }: Props) {
     .catch(() => {
       setIsPremium(false); // ou gère l'erreur comme tu veux
     });
-}, [userId]);
+  }, [userId]);
+
+  const handlePaymentSuccess = () => {
+    // Rafraîchir le statut premium
+    if (userId) {
+      fetch(`http://172.20.10.2:3001/api/user/${userId}/premium`)
+        .then(res => res.json())
+        .then(data => setIsPremium(data.premium))
+        .catch(() => setIsPremium(false));
+    }
+    // Fermer le panneau
+    closePanel();
+  };
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
@@ -184,13 +196,18 @@ export default function HomeScreen({ navigation }: Props) {
               style={styles.panelOverlay}
               onPress={closePanel}
             >
-              <Animated.View style={[styles.animatedPanel, animatedPanelStyle]}>
-                <Text style={styles.panelTitle}>Passez Premium 👑</Text>
-                <Text style={styles.panelContent}>
-                  Profitez de toutes les fonctionnalités, séries exclusives, et plus encore !
-                </Text>
-                <CheckoutForm/>
-              </Animated.View>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1, justifyContent: 'flex-end' }}
+              >
+                <Animated.View style={[styles.animatedPanel, animatedPanelStyle]}>
+                  <Text style={styles.panelTitle}>Passez Premium 👑</Text>
+                  <Text style={styles.panelContent}>
+                    Profitez de toutes les fonctionnalités, séries exclusives, et plus encore !
+                  </Text>
+                  {userId && <CheckoutForm userId={userId} onPaymentSuccess={handlePaymentSuccess}/>}
+                </Animated.View>
+              </KeyboardAvoidingView>
             </Pressable>
           )}
         </>
