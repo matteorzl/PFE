@@ -18,8 +18,8 @@ export default function DashboardPage() {
     async function fetchData() {
       try {
         const [numberResponse, evolutionResponse] = await Promise.all([
-          fetch("http://localhost:3001/api/users/number"),
-          fetch("http://localhost:3001/api/users/evolution")
+          fetch("http://localhost:3001/api/total/users/number"),
+          fetch("http://localhost:3001/api/evolution/users")
         ]);
 
         const numberData = await numberResponse.json();

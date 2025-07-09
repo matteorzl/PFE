@@ -1,10 +1,10 @@
 const { stripe } = require("../stripe-server");
-const express = require("express");
-const multer = require("multer");
+const express = require('express');
+const multer = require('multer');
 const upload = multer();
-const cors = require("cors");
-const jwt = require("jsonwebtoken");
-const {
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const { 
   /*user*/
   createUser,
   loginUser,
@@ -37,16 +37,14 @@ const {
   deleteCard,
   /*Therapist*/
   getTherapistIdByUserId,
-} = require("../db/db.query");
+} = require('../db/db.query');
 
-const app = express();
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
-);
+const app = express(); 
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 
@@ -54,11 +52,11 @@ app.listen(3001, () => {
   console.log("API d'enregistrement en cours d'exécution sur le port 3001");
 });
 
-const SECRET = "votre_secret_ultra_complexe"; // Mets ça dans un .env en prod !
+const SECRET = 'votre_secret_ultra_complexe'; // Mets ça dans un .env en prod !
 
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.sendStatus(401);
 
   jwt.verify(token, SECRET, (err, user) => {
@@ -68,23 +66,23 @@ function authenticateToken(req, res, next) {
   });
 }
 
-app.post("/api/payment-sheet", async (req, res) => {
+app.post('/api/payment-sheet', async (req, res) => {
   try {
     const customer = await stripe.customers.create();
     const ephemeralKey = await stripe.ephemeralKeys.create(
       { customer: customer.id },
-      { apiVersion: "2025-06-30.basil" },
+      { apiVersion: '2025-06-30.basil' }
     );
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 1000,
       currency: "eur",
-      customer: customer.id,
+      customer: customer.id
     });
 
     return res.status(201).json({
       paymentIntent: paymentIntent.client_secret,
       ephemeralKey: ephemeralKey.secret,
-      customer: customer.id,
+      customer: customer.id
     });
   } catch (err) {
     console.error("Stripe error:", err);
@@ -92,26 +90,27 @@ app.post("/api/payment-sheet", async (req, res) => {
   }
 });
 
-app.post("/api/payment", async (req, res) => {
-  const payment = req.body;
+app.post('/api/payment' , async(req,res) => {
+  const payment = req.body 
 
-  try {
-    const result = await createUserPayment(payment);
-    res.status(201).json({ message: "Paiment effectué avec succès" });
-  } catch (err) {
+  try{
+    const result = await createUserPayment(payment)
+    res.status(201).json({message : "Paiment effectué avec succès"})
+  } 
+  catch (err) {
     console.error("Erreur lors de l'enregistrement :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de l'enregistrement de l'utilisateur." });
+    res.status(500).json({ error: "Erreur lors de l'enregistrement de l'utilisateur." });
   }
+
 });
+
 
 ////////////
 /* USERS */
 //////////
 
 // Enregistrement d'un utilisateur
-app.post("/api/register", async (req, res) => {
+app.post('/api/register', async (req, res) => {
   const user = req.body;
 
   try {
@@ -119,14 +118,12 @@ app.post("/api/register", async (req, res) => {
     res.status(201).json({ message: "Utilisateur enregistré avec succès !" });
   } catch (err) {
     console.error("Erreur lors de l'enregistrement :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de l'enregistrement de l'utilisateur." });
+    res.status(500).json({ error: "Erreur lors de l'enregistrement de l'utilisateur." });
   }
 });
 
 // Recuperation d'un utilisateur par son ID
-app.get("/api/users/:id", async (req, res) => {
+app.get('/api/users/:id', async (req, res) => {
   const { id } = req.params;
   try {
     const user = await getUserById(id);
@@ -136,14 +133,12 @@ app.get("/api/users/:id", async (req, res) => {
     res.status(200).json(user);
   } catch (err) {
     console.error("Erreur lors de la récupération de l'utilisateur :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération de l'utilisateur." });
+    res.status(500).json({ error: "Erreur lors de la récupération de l'utilisateur." });
   }
 });
 
 // Connexion d'un utilisateur
-app.post("/api/login", async (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -152,7 +147,7 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign(
       { id: user.id, role: user.role }, // tu peux ajouter d'autres infos
       SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: '7d' }
     );
     res.status(200).json({ message: "Connexion réussie", user, token });
   } catch (err) {
@@ -161,40 +156,28 @@ app.post("/api/login", async (req, res) => {
 });
 
 // Récupérer le nombre d'utilisateurs
-app.get("/api/users/number", async (req, res) => {
+app.get('/api/total/users/number', async (req, res) => {
   try {
     const count = await getUsersNumber();
     res.status(200).json({ count });
   } catch (err) {
-    console.error(
-      "Erreur lors de la récupération du nombre d'utilisateurs :",
-      err,
-    );
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération du nombre d'utilisateurs.",
-      });
+    console.error("Erreur lors de la récupération du nombre d'utilisateurs :", err);
+    res.status(500).json({ error: "Erreur lors de la récupération du nombre d'utilisateurs." });
   }
 });
 
 // Récupérer l'évolution des utilisateurs
-app.get("/api/users/evolution", async (req, res) => {
+app.get('/api/evolution/users', async (req, res) => {
   try {
     const data = await getUsersEvolution();
     res.json(data);
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        error:
-          "Erreur lors de la récupération de l'évolution des utilisateurs.",
-      });
+    res.status(500).json({ error: "Erreur lors de la récupération de l'évolution des utilisateurs." });
   }
 });
 
 // Modifier un utilisateur
-app.patch("/api/users/:userId", async (req, res) => {
+app.patch('/api/users/:userId', async (req, res) => {
   const { userId } = req.params;
   const { firstname, lastname, mail } = req.body;
   try {
@@ -206,7 +189,7 @@ app.patch("/api/users/:userId", async (req, res) => {
   }
 });
 
-app.get("/api/user/:id/premium", async (req, res) => {
+app.get('/api/user/:id/premium', async (req, res) => {
   const userId = req.params.id;
   try {
     const premium = await isPremium(userId);
@@ -217,7 +200,7 @@ app.get("/api/user/:id/premium", async (req, res) => {
 });
 
 // Supprimer un utilisateur
-app.delete("/api/users/:id", async (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
   const userId = req.params.id;
   const role = req.body.selectedUser?.role;
 
@@ -225,60 +208,50 @@ app.delete("/api/users/:id", async (req, res) => {
     const deletedUser = await deleteUser(userId, role);
     res.status(200).json({
       message: "Utilisateur supprimé avec succès",
-      user: deletedUser,
+      user: deletedUser 
     });
   } catch (err) {
     console.error("Erreur lors de la suppression de l'utilisateur :", err);
-    if (err.message === "Utilisateur non trouvé") {
+    if (err.message === 'Utilisateur non trouvé') {
       res.status(404).json({ error: "Utilisateur non trouvé." });
     } else {
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la suppression de l'utilisateur." });
+      res.status(500).json({ error: "Erreur lors de la suppression de l'utilisateur." });
     }
   }
 });
 
 // Récupérer tous les utilisateurs
-app.get("/api/users", authenticateToken, async (req, res) => {
+app.get('/api/users', authenticateToken, async (req, res) => {
   try {
     const users = await getAllUsers();
     res.status(200).json(users);
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération des utilisateurs." });
+    res.status(500).json({ error: "Erreur lors de la récupération des utilisateurs." });
   }
 });
 
-app.get("/api/user/:userId/categories", async (req, res) => {
+app.get('/api/user/:userId/categories', async (req, res) => {
   const { userId } = req.params;
   try {
     const categories = await db.getCategoriesOrderedForUser(userId);
     res.json(categories);
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({
-        error: "Erreur lors de la récupération des séries de l'utilisateur",
-      });
+    res.status(500).json({ error: "Erreur lors de la récupération des séries de l'utilisateur" });
   }
 });
 
 //////////////
 /* PATIENT */
 ////////////
-app.get("/api/patient/:userId/card/:cardId/status", async (req, res) => {
+app.get('/api/patient/:userId/card/:cardId/status', async (req, res) => {
   const { userId, cardId } = req.params;
   try {
     const status = await db.getCardValidationStatusForUser(userId, cardId);
     res.json({ is_validated: status });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération du statut de la carte" });
+    res.status(500).json({ error: "Erreur lors de la récupération du statut de la carte" });
   }
 });
 
@@ -287,60 +260,53 @@ app.get("/api/patient/:userId/card/:cardId/status", async (req, res) => {
 ///////////
 
 // Récupérer toutes les catégories
-app.get("/api/categories", async (req, res) => {
+app.get('/api/categories', async (req, res) => {
   try {
     let categories = await getAllCategories();
-    categories = categories.map((cat) => ({
+    categories = categories.map(cat => ({
       ...cat,
       image: cat.image
-        ? `data:image/jpeg;base64,${cat.image.toString("base64")}`
+        ? `data:image/jpeg;base64,${cat.image.toString('base64')}`
         : null,
     }));
     res.json(categories);
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération des catégories." });
+    res.status(500).json({ error: "Erreur lors de la récupération des catégories." });
   }
 });
 
 // Récupérer les cartes d'une catégorie
-app.get("/api/categories/:categoryId/cards", async (req, res) => {
+app.get('/api/categories/:categoryId/cards', async (req, res) => {
   const { categoryId } = req.params;
   try {
     let cards = await getCardsByCategory(categoryId);
-    cards = cards.map((card) => ({
+    cards = cards.map(card => ({
       ...card,
-      draw_animation:
-        card.draw_animation && Buffer.isBuffer(card.draw_animation)
-          ? `data:image/png;base64,${card.draw_animation.toString("base64")}`
-          : card.draw_animation && card.draw_animation.data
-            ? `data:image/png;base64,${Buffer.from(card.draw_animation.data).toString("base64")}`
-            : null,
-      real_animation:
-        card.real_animation && Buffer.isBuffer(card.real_animation)
-          ? `data:image/png;base64,${card.real_animation.toString("base64")}`
-          : card.real_animation && card.real_animation.data
-            ? `data:image/png;base64,${Buffer.from(card.real_animation.data).toString("base64")}`
-            : null,
-      sound_file:
-        card.sound_file && Buffer.isBuffer(card.sound_file)
-          ? `data:audio/mpeg;base64,${card.sound_file.toString("base64")}`
-          : card.sound_file && card.sound_file.data
-            ? `data:audio/mpeg;base64,${Buffer.from(card.sound_file.data).toString("base64")}`
-            : null,
+      draw_animation: card.draw_animation && Buffer.isBuffer(card.draw_animation)
+        ? `data:image/png;base64,${card.draw_animation.toString('base64')}`
+        : card.draw_animation && card.draw_animation.data
+          ? `data:image/png;base64,${Buffer.from(card.draw_animation.data).toString('base64')}`
+          : null,
+      real_animation: card.real_animation && Buffer.isBuffer(card.real_animation)
+        ? `data:image/png;base64,${card.real_animation.toString('base64')}`
+        : card.real_animation && card.real_animation.data
+          ? `data:image/png;base64,${Buffer.from(card.real_animation.data).toString('base64')}`
+          : null,
+      sound_file: card.sound_file && Buffer.isBuffer(card.sound_file)
+        ? `data:audio/mpeg;base64,${card.sound_file.toString('base64')}`
+        : card.sound_file && card.sound_file.data
+          ? `data:audio/mpeg;base64,${Buffer.from(card.sound_file.data).toString('base64')}`
+          : null,
     }));
     res.status(200).json(cards);
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération des cartes." });
+    res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
   }
 });
 
 // Créer une nouvelle catégorie
-app.post("/api/categories", upload.single("image"), async (req, res) => {
+app.post('/api/categories', upload.single('image'), async (req, res) => {
   const { name, description, therapistId, is_free } = req.body;
   const safeTherapistId = therapistId ? therapistId : null;
   const image = req.file ? req.file.buffer : null;
@@ -350,81 +316,67 @@ app.post("/api/categories", upload.single("image"), async (req, res) => {
     res.status(201).json({ message: "Catégorie créée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la création de la catégorie :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la création de la catégorie." });
+    res.status(500).json({ error: "Erreur lors de la création de la catégorie." });
   }
 });
 
 // Récupérer une catégorie par son id
-app.patch(
-  "/api/categories/:categoryId",
-  upload.single("image"),
-  async (req, res) => {
-    const { categoryId } = req.params;
-    const { name, description, is_free } = req.body;
-    const image = req.file ? req.file.buffer : null;
+app.patch('/api/categories/:categoryId', upload.single('image'), async (req, res) => {
+  const { categoryId } = req.params;
+  const { name, description, is_free } = req.body;
+  const image = req.file ? req.file.buffer : null;
 
-    try {
-      await updateCategory(categoryId, name, description, image, is_free);
-      res.status(200).json({ message: "Catégorie modifiée avec succès !" });
-    } catch (err) {
-      console.error("Erreur lors de la modification de la catégorie :", err);
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la modification de la catégorie." });
-    }
-  },
-);
+  try {
+    await updateCategory(categoryId, name, description, image, is_free);
+    res.status(200).json({ message: "Catégorie modifiée avec succès !" });
+  } catch (err) {
+    console.error("Erreur lors de la modification de la catégorie :", err);
+    res.status(500).json({ error: "Erreur lors de la modification de la catégorie." });
+  }
+});
+
 
 // Récupérer une catégorie par son id pour l'édition
-app.get("/api/categories/edit/:categoryId", async (req, res) => {
+app.get('/api/categories/edit/:categoryId', async (req, res) => {
   const { categoryId } = req.params;
   try {
     const category = await getCategoryById(categoryId);
     res.status(200).json(category);
   } catch (err) {
     console.error("Erreur lors de la récupération de la série :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération de la série." });
+    res.status(500).json({ error: "Erreur lors de la récupération de la série." });
   }
 });
 
 // Supprimer une catégorie
-app.delete("/api/category/:id", async (req, res) => {
+app.delete('/api/category/:id', async (req, res) => {
   const categoryId = req.params.id;
 
   try {
     const deletedCategory = await deleteCategory(categoryId);
     res.status(200).json({
       message: "Catégorie supprimée avec succès",
-      category: deletedCategory,
+      category: deletedCategory
     });
   } catch (err) {
     console.error("Erreur lors de la suppression de la catégorie :", err);
-    if (err.message === "Catégorie non trouvée") {
+    if (err.message === 'Catégorie non trouvée') {
       res.status(404).json({ error: "Catégorie non trouvée." });
     } else {
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la suppression de la catégorie." });
+      res.status(500).json({ error: "Erreur lors de la suppression de la catégorie." });
     }
   }
 });
 
 // Récupérer un medecin par son userid
-app.get("/api/therapist-id/:userId", async (req, res) => {
+app.get('/api/therapist-id/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     const therapist = await getTherapistIdByUserId(userId);
-    if (!therapist)
-      return res.status(404).json({ error: "Therapist not found" });
+    if (!therapist) return res.status(404).json({ error: "Therapist not found" });
     res.json({ therapistId: therapist.id });
   } catch (err) {
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération du therapist" });
+    res.status(500).json({ error: "Erreur lors de la récupération du therapist" });
   }
 });
 
@@ -433,25 +385,23 @@ app.get("/api/therapist-id/:userId", async (req, res) => {
 ///////////
 
 // Récupérer toutes les cartes
-app.get("/api/cards", async (req, res) => {
+app.get('/api/cards', async (req, res) => {
   try {
     const cards = await getAllCards();
     res.status(200).json(cards);
   } catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);
-    res
-      .status(500)
-      .json({ error: "Erreur lors de la récupération des cartes." });
+    res.status(500).json({ error: "Erreur lors de la récupération des cartes." });
   }
 });
 
 // Pour l'image
-app.get("/api/cards/:id/image", async (req, res) => {
+app.get('/api/cards/:id/image', async (req, res) => {
   try {
     const image = await getCardImage(req.params.id);
     if (!image) return res.sendStatus(404);
-    res.set("Content-Type", "image/png");
-    res.set("Access-Control-Allow-Origin", "*");
+    res.set('Content-Type', 'image/png');
+    res.set('Access-Control-Allow-Origin', '*');
     res.send(image);
   } catch (err) {
     console.error("Erreur :", err);
@@ -460,12 +410,12 @@ app.get("/api/cards/:id/image", async (req, res) => {
 });
 
 // Pour l'animation GIF
-app.get("/api/cards/:id/animation", async (req, res) => {
+app.get('/api/cards/:id/animation', async (req, res) => {
   try {
     const animation = await getCardAnimation(req.params.id);
     if (!animation) return res.sendStatus(404);
-    res.set("Content-Type", "image/gif");
-    res.set("Access-Control-Allow-Origin", "*");
+    res.set('Content-Type', 'image/gif');
+    res.set('Access-Control-Allow-Origin', '*');
     res.send(animation);
   } catch (err) {
     console.error("Erreur lors de la récupération de l'animation :", err);
@@ -474,11 +424,11 @@ app.get("/api/cards/:id/animation", async (req, res) => {
 });
 
 // Pour le son
-app.get("/api/cards/:id/sound", async (req, res) => {
+app.get('/api/cards/:id/sound', async (req, res) => {
   try {
     const sound = await getCardSound(req.params.id);
     if (!sound) return res.sendStatus(404);
-    res.set("Content-Type", "audio/mpeg");
+    res.set('Content-Type', 'audio/mpeg');
     res.send(sound);
   } catch (err) {
     console.error("Erreur :", err);
@@ -487,51 +437,35 @@ app.get("/api/cards/:id/sound", async (req, res) => {
 });
 
 // Créer une nouvelle carte
-app.post(
-  "/api/cards",
-  upload.fields([
-    { name: "image", maxCount: 1 }, // PNG/JPG
-    { name: "draw_animation", maxCount: 1 }, // GIF
-    { name: "sound_file", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { name } = req.body;
-      const draw_animation = req.files["image"]?.[0]?.buffer || null; // PNG/JPG
-      const real_animation = req.files["draw_animation"]?.[0]?.buffer || null; // GIF
-      const sound_file = req.files["sound_file"]?.[0]?.buffer || null;
+app.post('/api/cards', upload.fields([
+  { name: 'image', maxCount: 1 },           // PNG/JPG
+  { name: 'draw_animation', maxCount: 1 },  // GIF
+  { name: 'sound_file', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { name } = req.body;
+    const draw_animation = req.files['image']?.[0]?.buffer || null; // PNG/JPG
+    const real_animation = req.files['draw_animation']?.[0]?.buffer || null; // GIF
+    const sound_file = req.files['sound_file']?.[0]?.buffer || null;
 
-      if (!name || !draw_animation || !real_animation || !sound_file) {
-        return res
-          .status(400)
-          .json({ error: "Tous les champs sont obligatoires." });
-      }
-
-      await createCard(name, draw_animation, real_animation, sound_file);
-      res.status(201).json({ message: "Carte créée avec succès." });
-    } catch (err) {
-      console.error("Erreur lors de la création de la carte :", err);
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la création de la carte." });
+    if (!name || !draw_animation || !real_animation || !sound_file) {
+      return res.status(400).json({ error: "Tous les champs sont obligatoires." });
     }
-  },
-);
+
+    await createCard(name, draw_animation, real_animation, sound_file);
+    res.status(201).json({ message: "Carte créée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la création de la carte :", err);
+    res.status(500).json({ error: "Erreur lors de la création de la carte." });
+  }
+});
 
 // Mettre à jour le statut de validation d'une carte
-app.patch("/api/cards/:id/validate", async (req, res) => {
+app.patch('/api/cards/:id/validate', async (req, res) => {
   const cardId = Number(req.params.id); // <-- force en nombre
   const is_validated = Number(req.body.is_validated); // <-- force en nombre
   try {
-    await validateCard(
-      cardId,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      is_validated,
-    );
+    await validateCard(cardId, undefined, undefined, undefined, undefined, undefined, is_validated);
     res.status(200).json({ message: "Statut de validation mis à jour." });
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la mise à jour du statut." });
@@ -539,54 +473,46 @@ app.patch("/api/cards/:id/validate", async (req, res) => {
 });
 
 // Modifier une carte
-app.put(
-  "/api/cards/:id",
-  upload.fields([
-    { name: "image", maxCount: 1 },
-    { name: "draw_animation", maxCount: 1 },
-    { name: "sound_file", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    try {
-      const { name } = req.body;
-      const cardId = req.params.id;
+app.put('/api/cards/:id', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'draw_animation', maxCount: 1 },
+  { name: 'sound_file', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    const { name } = req.body;
+    const cardId = req.params.id;
 
-      // Récupère les fichiers si présents
-      const draw_animation = req.files["image"]?.[0]?.buffer;
-      const real_animation = req.files["draw_animation"]?.[0]?.buffer;
-      const sound_file = req.files["sound_file"]?.[0]?.buffer;
+    // Récupère les fichiers si présents
+    const draw_animation = req.files['image']?.[0]?.buffer;
+    const real_animation = req.files['draw_animation']?.[0]?.buffer;
+    const sound_file = req.files['sound_file']?.[0]?.buffer;
 
-      await updateCard(
-        cardId,
-        name,
-        draw_animation,
-        real_animation,
-        sound_file,
-      );
-      res.status(200).json({ message: "Carte modifiée avec succès." });
-    } catch (err) {
-      console.error("Erreur lors de la modification de la carte :", err);
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la modification de la carte." });
-    }
-  },
-);
+    await updateCard(
+      cardId,
+      name,
+      draw_animation,
+      real_animation,
+      sound_file
+    );
+    res.status(200).json({ message: "Carte modifiée avec succès." });
+  } catch (err) {
+    console.error("Erreur lors de la modification de la carte :", err);
+    res.status(500).json({ error: "Erreur lors de la modification de la carte." });
+  }
+});
 
 // Supprimer une carte
-app.delete("/api/cards/:id", async (req, res) => {
+app.delete('/api/cards/:id', async (req, res) => {
   const cardId = req.params.id;
   try {
     await deleteCard(cardId);
     res.status(200).json({ message: "Carte supprimée avec succès." });
   } catch (err) {
     console.error("Erreur lors de la suppression de la carte :", err);
-    if (err.message === "Carte non trouvée") {
+    if (err.message === 'Carte non trouvée') {
       res.status(404).json({ error: "Carte non trouvée." });
     } else {
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la suppression de la carte." });
+      res.status(500).json({ error: "Erreur lors de la suppression de la carte." });
     }
   }
 });
