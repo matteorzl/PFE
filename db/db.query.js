@@ -238,7 +238,8 @@ async function getCardValidationStatusForUser(userId, cardId) {
 }
 
 async function getAllCategories() {
-  const query = `SELECT * FROM category`;
+  const query = `SELECT * FROM category
+      ORDER BY is_free DESC`;
 
   try {
     const con = await createConnection();

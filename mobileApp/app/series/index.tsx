@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, TextInput, Dimensions, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import { useStripe } from '@stripe/stripe-react-native';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -10,11 +11,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import  { Svg,Path, Rect, Circle } from 'react-native-svg';
+import CheckoutForm from '@/components/checkout-form.native';
 
 type RootStackParamList = {
   Home: undefined;
   Login: undefined;
 };
+
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -23,6 +27,7 @@ type Category = {
   name: string;
   image: string;
   progress: number;
+  is_free: number;
 };
 
 export default function HomeScreen({ navigation }: Props) {
@@ -31,8 +36,8 @@ export default function HomeScreen({ navigation }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const router = useRouter();
-   const [panelOpen, setPanelOpen] = useState(false);
-
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [loading, setLoading] = useState(false)
   const collapsedHeight = 0;
   const expandedHeight = Dimensions.get('window').height * 0.55;
   const panelHeight = useSharedValue(collapsedHeight);
@@ -45,6 +50,21 @@ export default function HomeScreen({ navigation }: Props) {
     setPanelOpen(true);
     panelHeight.value = expandedHeight;
   };
+
+  const CrownIcon = () => (
+    <Svg
+      width={24}
+      height={24}
+      viewBox="0 0 64 64"
+      style={{ marginRight: 8 }}
+    >
+      <Path d="M8 22L20 38L32 20L44 38L56 22L50 48H14L8 22Z" fill="#FFD700" stroke="#C9A000" strokeWidth="2" strokeLinejoin="round" />
+      <Rect x="18" y="48" width="28" height="6" rx="1" fill="#C9A000" />
+      <Circle cx="8" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+      <Circle cx="32" cy="20" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+      <Circle cx="56" cy="22" r="3" fill="#FFD700" stroke="#C9A000" strokeWidth="1" />
+    </Svg>
+  );
 
   const closePanel = () => {
     panelHeight.value = collapsedHeight;
@@ -107,29 +127,44 @@ export default function HomeScreen({ navigation }: Props) {
         <Ionicons name="search" size={22} color="#1a3cff" style={{ position: 'absolute', right: 16 }} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8 }}>
-        {filteredCategories.map((cat: any, idx) => (
-          <TouchableOpacity key={cat.id} style={[
-            styles.card,
-            cat.progress === 100 && { borderColor: '#FFD600', borderWidth: 3 }
-          ]}
-          onPress={() => router.push(`/series/${cat.id}` as any)}
-          >
-            <Image
-              source={{ uri: cat.image }}
-              style={styles.cardImage}
-              resizeMode="cover"
-              blurRadius={cat.progress === 0 ? 2 : 0}
-            />
-            <View style={styles.cardOverlay} />
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{cat.name}</Text>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.progressLabel}>Progression</Text>
-                <Text style={styles.progressValue}>{cat.progress}%</Text>
+        {filteredCategories.map((cat: any, idx) => {
+          const isLocked = !isPremium && cat.is_free === 0;
+          return (
+            <TouchableOpacity
+              key={cat.id}
+              style={[
+                styles.card,
+                cat.progress === 100 && { borderColor: '#FFD600', borderWidth: 3 }
+              ]}
+              onPress={() => {
+                if (!isLocked) {
+                  router.push(`/series/${cat.id}` as any);
+                }
+              }}
+              activeOpacity={isLocked ? 1 : 0.7}
+              disabled={isLocked}
+            >
+              <Image
+                source={{ uri: cat.image }}
+                style={[
+                  styles.cardImage,
+                  isLocked && styles.locked
+                ]}
+                resizeMode="cover"
+                blurRadius={isLocked ? 10 : (cat.progress === 0 ? 2 : 0)}
+              />
+              <View style={styles.cardOverlay} />
+              <View style={styles.cardContent}>
+                
+                <Text style={styles.cardTitle}>{cat.is_free === 0 && <CrownIcon />}{cat.name}</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.progressLabel}>Progression</Text>
+                  <Text style={styles.progressValue}>{cat.progress}%</Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
       {!isPremium && (
         <>
@@ -139,9 +174,9 @@ export default function HomeScreen({ navigation }: Props) {
             onPress={openPanel}
           >
             <Text style={styles.premiumBannerText}>
-              Passe 👑 
+              Passe <CrownIcon/> 
               <Text style={styles.premiumWord}>Premium </Text>
-              👑 pour débloquer toutes les fonctionnalités !
+              <CrownIcon/> pour débloquer toutes les fonctionnalités !
             </Text>
           </TouchableOpacity>
           {panelOpen && (
@@ -154,15 +189,7 @@ export default function HomeScreen({ navigation }: Props) {
                 <Text style={styles.panelContent}>
                   Profitez de toutes les fonctionnalités, séries exclusives, et plus encore !
                 </Text>
-                <TouchableOpacity
-                  style={styles.panelButton}
-                  onPress={() => {
-                    closePanel();
-                    router.push('/payment' as any);
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>S'abonner</Text>
-                </TouchableOpacity>
+                <CheckoutForm/>
               </Animated.View>
             </Pressable>
           )}
@@ -232,6 +259,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 4,
   },
+  locked:{
+    borderWidth:2,
+    borderRadius:16,
+    borderColor: "rgba(255, 215, 0, 0.9)",
+  },
   premiumBanner: {
     position: 'absolute',
     left: 0,
@@ -292,13 +324,5 @@ const styles = StyleSheet.create({
     color: '#444',
     marginBottom: 24,
     textAlign: 'center',
-  },
-  panelButton: {
-    backgroundColor: '#1a3cff',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent:'flex-end',
-    marginBottom: 8,
-  },
+  }
 });
