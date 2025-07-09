@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Spinner, Card, Input, CardBody, CardFooter, Image, Breadcrumbs, BreadcrumbItem, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, cn} from "@heroui/react";
 import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
-import { CreateModal } from "@/components/category/CreateModal"; // Ajoute cet import
+import { CreateModal } from "@/components/category/CreateModal";
 
 interface Category {
   id: number;
@@ -28,8 +28,8 @@ export const PlusIcon = (props: any) => (
 
 const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
   let yellow = 1;
-  if (difficulty === "moyen" || difficulty === 2) yellow = 2;
-  if (difficulty === "difficile" || difficulty === 3) yellow = 3;
+  if (difficulty === "MOYEN" || difficulty === 2) yellow = 2;
+  if (difficulty === "DIFFICILE" || difficulty === 3) yellow = 3;
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3].map((i) => (
@@ -39,11 +39,14 @@ const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
           height={20}
           viewBox="0 0 20 20"
           fill={i <= yellow ? "#FFD700" : "#fff"}
-          stroke="#FFD700"
+          stroke="#FFC04C"
+          style={{
+            filter: "drop-shadow(0 4px 4px rgba(0,0,0,1))"
+          }}
         >
           <polygon
             points="10,2 12.5,7.5 18,8 14,12 15,18 10,15 5,18 6,12 2,8 7.5,7.5"
-            strokeWidth={i <= yellow ? 0 : 1}
+            strokeWidth="1"
           />
         </svg>
       ))}

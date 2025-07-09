@@ -30,7 +30,7 @@ yarn-error.log*
 .env*.local
 
 #db
-db/db.config.js
+db\db.config.js
 
 # vercel
 .vercel
