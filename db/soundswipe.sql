@@ -48,6 +48,7 @@ CREATE TABLE `card` (
 
 CREATE TABLE `category` (
   `id` int(11) NOT NULL,
+  `order_list` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `description` varchar(100) DEFAULT NULL,
   `image` longblob DEFAULT NULL,

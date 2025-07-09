@@ -43,10 +43,10 @@ const users = [
 ];
 
 const categories = [
-  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1, is_free: 1, difficulty: 'FACILE' },
-  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1, is_free: 1, difficulty: 'MOYEN' },
-  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2, is_free: 1, difficulty: 'DIFFICILE' },
-  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2, is_free: 0, difficulty: 'FACILE' }
+  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1, is_free: 1, difficulty: 'FACILE', order_list: 1 },
+  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1, is_free: 1, difficulty: 'MOYEN', order_list: 2 },
+  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2, is_free: 1, difficulty: 'DIFFICILE', order_list: 3 },
+  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2, is_free: 0, difficulty: 'FACILE', order_list: 4 }
 ];
 
 const cards = [
@@ -228,9 +228,9 @@ async function main() {
     }
 
     const [result] = await conn.execute(
-      `INSERT INTO category (name, description, image, created_by, is_free, difficulty)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [cat.name, cat.description, imageBuffer, createdByUserId, cat.is_free, cat.difficulty]
+      `INSERT INTO category (name, description, image, created_by, is_free, difficulty, order_list)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [cat.name, cat.description, imageBuffer, createdByUserId, cat.is_free, cat.difficulty, cat.order_list]
     );
     categoryIds.push(result.insertId);
   }

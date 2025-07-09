@@ -220,8 +220,25 @@ async function getAllUsers() {
 
 async function getCategoriesOrderedForUser(userId) {
   const con = await createConnection();
+
+  // 1. Trouver le patient.id à partir du userId
+  const [patients] = await con.query(
+    `SELECT id FROM patient WHERE user_id = ?`,
+    [userId]
+  );
+  if (patients.length === 0) {
+    await con.end();
+    return []; // Pas de patient => pas de catégories
+  }
+  const patientId = patients[0].id;
+
+  // 2. Récupérer les catégories associées à ce patient
   const [rows] = await con.query(
-    `SELECT * FROM category ORDER BY order_list ASC, name ASC`
+    `SELECT c.* FROM category c
+     JOIN patient_category pc ON pc.category_id = c.id
+     WHERE pc.patient_id = ?
+     ORDER BY c.order_list ASC, c.name ASC`,
+    [patientId]
   );
   await con.end();
   return rows;
@@ -229,9 +246,19 @@ async function getCategoriesOrderedForUser(userId) {
 
 async function getCardValidationStatusForUser(userId, cardId) {
   const con = await createConnection();
+  const [patients] = await con.query(
+    `SELECT id FROM patient WHERE user_id = ?`,
+    [userId]
+  );
+  if (patients.length === 0) {
+    await con.end();
+    return 0;
+  }
+  const patientId = patients[0].id;
+
   const [rows] = await con.query(
-    `SELECT is_validated FROM card_validation WHERE user_id = ? AND card_id = ? LIMIT 1`,
-    [userId, cardId]
+    `SELECT is_validated FROM patient_card WHERE patient_id = ? AND card_id = ? LIMIT 1`,
+    [patientId, cardId]
   );
   await con.end();
   return rows.length > 0 ? rows[0].is_validated : 0;

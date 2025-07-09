@@ -214,10 +214,17 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
+// Récupérer les séries d'un utilisateur
 app.get('/api/user/:userId/categories', async (req, res) => {
   const { userId } = req.params;
   try {
-    const categories = await db.getCategoriesOrderedForUser(userId);
+    let categories = await getCategoriesOrderedForUser(userId);
+    categories = categories.map(cat => ({
+      ...cat,
+      image: cat.image
+        ? `data:image/jpeg;base64,${cat.image.toString('base64')}`
+        : null,
+    }));
     res.json(categories);
   } catch (err) {
     console.error(err);
@@ -231,7 +238,7 @@ app.get('/api/user/:userId/categories', async (req, res) => {
 app.get('/api/patient/:userId/card/:cardId/status', async (req, res) => {
   const { userId, cardId } = req.params;
   try {
-    const status = await db.getCardValidationStatusForUser(userId, cardId);
+    const status = await getCardValidationStatusForUser(userId, cardId);
     res.json({ is_validated: status });
   } catch (err) {
     console.error(err);
