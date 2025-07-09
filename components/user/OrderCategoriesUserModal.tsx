@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Accordion,
-  AccordionItem,
-  Progress,
-  Chip,
-  Spinner,
-  Avatar,
+  Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button,
+  Progress, Chip, Spinner, Avatar
 } from "@heroui/react";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, useSortable, verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
   let yellow = 1;
@@ -39,6 +36,67 @@ const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
   );
 };
 
+function SortableCategoryItem({ cat, index, percent, cards, expanded, onToggle }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        background: isDragging ? "#f3f4f6" : undefined,
+        borderRadius: 8,
+        marginBottom: 8,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.04)"
+      }}
+      {...attributes}
+      {...listeners}
+      className="border border-default-200"
+    >
+      <div
+        className="flex items-center justify-between gap-3 w-full px-4 py-2 cursor-pointer"
+        onClick={onToggle}
+      >
+        <span className="flex items-center gap-2 font-semibold flex-shrink-0">
+          <span className="cursor-grab text-default-400 select-none">{index + 1}</span>
+          <Avatar
+            src={cat.image}
+            alt={cat.name}
+            className="w-8 h-8 object-cover border border-default-300"
+          />
+          {cat.name}
+          <StarsDifficulty difficulty={cat.difficulty} />
+        </span>
+        <div className="flex items-center gap-2 w-40">
+          <Progress
+            value={percent}
+            color={percent === 100 ? "success" : "primary"}
+            className="w-full"
+            aria-label={`Progression de validation pour la série ${cat.name}`}
+          />
+          <span className="text-xs text-default-500 min-w-[2.5em] text-right">{percent}%</span>
+        </div>
+      </div>
+      {expanded && (
+        <div className="flex flex-col gap-2 px-6 pb-3">
+          {cards.length === 0 && <span className="text-default-400">Aucune carte</span>}
+          {cards.map((card: any) => (
+            <div key={card.id} className="flex items-center gap-3">
+              <span>{card.name}</span>
+              {card.is_validated === 1 ? (
+                <Chip color="success" size="sm">Validée</Chip>
+              ) : (
+                <Chip color="warning" size="sm">À faire</Chip>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 type User = {
   id: string;
   firstname: string;
@@ -55,6 +113,11 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
   const [categories, setCategories] = useState<any[]>([]);
   const [cardsByCategory, setCardsByCategory] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -83,6 +146,21 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
       });
   }, [user]);
 
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      const oldIndex = categories.findIndex(cat => cat.id === active.id);
+      const newIndex = categories.findIndex(cat => cat.id === over.id);
+      const newCategories = arrayMove(categories, oldIndex, newIndex);
+      setCategories(newCategories);
+      // TODO : envoyer le nouvel ordre au backend si besoin
+    }
+  }
+
+  function toggleExpand(catId: string) {
+    setExpanded((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  }
+
   return (
     <Modal isOpen={isOpen && !!user} onClose={onClose} size="lg">
       <ModalContent>
@@ -99,55 +177,33 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
               ) : categories.length === 0 ? (
                 <div className="text-center text-default-400">Aucune série trouvée pour cet utilisateur.</div>
               ) : (
-                <Accordion selectionMode="multiple">
-                  {categories.map((cat) => {
-                    const cards = cardsByCategory[cat.id] || [];
-                    const validated = cards.filter((c) => c.is_validated === 1).length;
-                    const percent = cards.length ? Math.round((validated / cards.length) * 100) : 0;
-                    return (
-                      <AccordionItem
-                        key={cat.id}
-                        aria-label={cat.name}
-                        title={
-                          <div className="flex items-center justify-between gap-3 w-full">
-                            <span className="flex items-center gap-2 font-semibold flex-shrink-0">
-                              <Avatar
-                                src={cat.image}
-                                alt={cat.name}
-                                className="w-8 h-8 object-cover border border-default-300"
-                              />
-                              {cat.name}
-                              <StarsDifficulty difficulty={cat.difficulty} />
-                            </span>
-                            <div className="flex items-center gap-2 w-40">
-                              <Progress
-                                value={percent}
-                                color={percent === 100 ? "success" : "primary"}
-                                className="w-full"
-                                aria-label={`Progression de validation pour la série ${cat.name}`}
-                              />
-                              <span className="text-xs text-default-500 min-w-[2.5em] text-right">{percent}%</span>
-                            </div>
-                          </div>
-                        }
-                      >
-                        <div className="flex flex-col gap-2">
-                          {cards.length === 0 && <span className="text-default-400">Aucune carte</span>}
-                          {cards.map((card) => (
-                            <div key={card.id} className="flex items-center gap-3">
-                              <span>{card.name}</span>
-                              {card.is_validated === 1 ? (
-                                <Chip color="success" size="sm">Validée</Chip>
-                              ) : (
-                                <Chip color="warning" size="sm">À faire</Chip>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </AccordionItem>
-                    );
-                  })}
-                </Accordion>
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={categories.map(cat => cat.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {categories.map((cat, index) => {
+                      const cards = cardsByCategory[cat.id] || [];
+                      const validated = cards.filter((c) => c.is_validated === 1).length;
+                      const percent = cards.length ? Math.round((validated / cards.length) * 100) : 0;
+                      return (
+                        <SortableCategoryItem
+                          key={cat.id}
+                          cat={cat}
+                          index={index}
+                          percent={percent}
+                          cards={cards}
+                          expanded={!!expanded[cat.id]}
+                          onToggle={() => toggleExpand(cat.id)}
+                        />
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               )}
             </ModalBody>
             <ModalFooter>

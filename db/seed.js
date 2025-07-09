@@ -294,6 +294,27 @@ async function main() {
     );
   }
 
+  // Remplissage automatique de patient_card :
+  // Pour chaque patient, pour chaque catégorie associée, pour chaque carte de la catégorie, on insère patient_card
+  for (const link of patientCategoryLinks) {
+    const patientId = patientIds[link.patientIndex];
+    const categoryId = categoryIds[link.categoryIndex];
+    // Trouver toutes les cartes de cette catégorie
+    const [catCardsRows] = await conn.query(
+      `SELECT card_id FROM card_category WHERE category_id = ?`,
+      [categoryId]
+    );
+    for (const row of catCardsRows) {
+      // On récupère l'index de la carte dans cardIds pour retrouver is_validated du seeder
+      const cardIndex = cardIds.findIndex(id => id === row.card_id);
+      const isValidated = cardIndex !== -1 ? cards[cardIndex].is_validated : 0;
+      await conn.execute(
+        `INSERT INTO patient_card (patient_id, card_id, category_id, is_validated) VALUES (?, ?, ?, ?)`,
+        [patientId, row.card_id, categoryId, isValidated]
+      );
+    }
+  }
+
   // Réactiver les contraintes de clés étrangères
   await conn.query('SET FOREIGN_KEY_CHECKS=1');
 
