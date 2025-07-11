@@ -254,10 +254,9 @@ async function getCardValidationStatusForUser(userId, cardId, category_id) {
     await con.end();
     return 0;
   }
-  const patientId = patients[0].id;
 
   const [rows] = await con.query(
-    `SELECT is_validated FROM card_validation WHERE user_id = ? AND card_id = ? AND category_id = ? LIMIT 1`,
+    `SELECT is_validated FROM patient_card WHERE patient_id = ? AND card_id = ? AND category_id = ? LIMIT 1`,
     [userId, cardId, category_id]
   );
   await con.end();

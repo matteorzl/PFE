@@ -153,7 +153,12 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
       const newIndex = categories.findIndex(cat => cat.id === over.id);
       const newCategories = arrayMove(categories, oldIndex, newIndex);
       setCategories(newCategories);
-      // TODO : envoyer le nouvel ordre au backend si besoin
+  
+      fetch(`http://localhost:3001/api/user/${user.id}/categories/order`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryIds: newCategories.map(cat => cat.id) })
+      });
     }
   }
 

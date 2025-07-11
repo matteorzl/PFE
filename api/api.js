@@ -275,6 +275,17 @@ app.get('/api/patient/:userId/category/:categoryId/progress', async (req, res) =
   }
 });
 
+app.patch('/api/user/:userId/categories/order', async (req, res) => {
+  const { userId } = req.params;
+  const { categoryIds } = req.body;
+  try {
+    await updatePatientCategoriesOrder(userId, categoryIds);
+    res.status(200).json({ message: "Ordre des catégories mis à jour !" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des catégories." });
+  }
+});
+
 app.post('/api/validate/card', async (req,res)=> {
   const { userId, cardId, categoryId } = req.body;
   try {

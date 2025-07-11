@@ -87,6 +87,7 @@ CREATE TABLE `patient` (
   `phone` varchar(20) DEFAULT NULL,
   `parent_name` varchar(100) DEFAULT NULL,
   `parent_lastname` varchar(20) DEFAULT NULL,
+  `is_accepted` int(11) DEFAULT NULL
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -100,6 +101,7 @@ CREATE TABLE `patient` (
 CREATE TABLE `patient_category` (
   `patient_id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL,
+  `order_list` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -163,6 +165,7 @@ CREATE TABLE `users` (
   `mail` varchar(100) DEFAULT NULL,
   `country` varchar(100) DEFAULT NULL,
   `city` varchar(100) DEFAULT NULL,
+  `is_deleted` tinyint(1) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
