@@ -232,10 +232,17 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
+// Récupérer les séries d'un utilisateur
 app.get('/api/user/:userId/categories', async (req, res) => {
   const { userId } = req.params;
   try {
-    const categories = await getCategoriesOrderedForUser(userId);
+    let categories = await getCategoriesOrderedForUser(userId);
+    categories = categories.map(cat => ({
+      ...cat,
+      image: cat.image
+        ? `data:image/jpeg;base64,${cat.image.toString('base64')}`
+        : null,
+    }));
     res.json(categories);
   } catch (err) {
     console.error(err);

@@ -26,11 +26,10 @@ export default function DashboardPage() {
         const evolutionData = await evolutionResponse.json();
 
         setUserNumber(numberData.count);
-        // Correction ici : toujours un tableau
         setUserEvolution(Array.isArray(evolutionData) ? evolutionData : []);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setUserEvolution([]); // fallback en cas d'erreur
+        setUserEvolution([]);
       } finally {
         setLoading(false);
       }

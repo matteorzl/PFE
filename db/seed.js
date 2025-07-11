@@ -43,10 +43,10 @@ const users = [
 ];
 
 const categories = [
-  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1, is_free: 1, difficulty: 'FACILE' },
-  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1, is_free: 1, difficulty: 'MOYEN' },
-  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2, is_free: 1, difficulty: 'DIFFICILE' },
-  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2, is_free: 0, difficulty: 'FACILE' }
+  { name: 'Animaux', description: "Sons d'animaux", image: 'animals.jpg', created_by: 1, is_free: 1, difficulty: 'FACILE', order_list: 1 },
+  { name: 'Transport', description: 'Sons de véhicules', image: 'transport.jpg', created_by: 1, is_free: 1, difficulty: 'MOYEN', order_list: 2 },
+  { name: 'Nature', description: 'Sons de la nature', image: 'nature.jpeg', created_by: 2, is_free: 1, difficulty: 'DIFFICILE', order_list: 3 },
+  { name: 'Musique', description: 'Instruments de musique', image: 'music.jpg', created_by: 2, is_free: 0, difficulty: 'FACILE', order_list: 4 }
 ];
 
 const cards = [
@@ -228,9 +228,9 @@ async function main() {
     }
 
     const [result] = await conn.execute(
-      `INSERT INTO category (name, description, image, created_by, is_free, difficulty)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [cat.name, cat.description, imageBuffer, createdByUserId, cat.is_free, cat.difficulty]
+      `INSERT INTO category (name, description, image, created_by, is_free, difficulty, order_list)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [cat.name, cat.description, imageBuffer, createdByUserId, cat.is_free, cat.difficulty, cat.order_list]
     );
     categoryIds.push(result.insertId);
   }
@@ -292,6 +292,27 @@ async function main() {
       `INSERT INTO card_category (card_id, category_id) VALUES (?, ?)`,
       [cardIds[link.cardIndex], categoryIds[link.categoryIndex]]
     );
+  }
+
+  // Remplissage automatique de patient_card :
+  // Pour chaque patient, pour chaque catégorie associée, pour chaque carte de la catégorie, on insère patient_card
+  for (const link of patientCategoryLinks) {
+    const patientId = patientIds[link.patientIndex];
+    const categoryId = categoryIds[link.categoryIndex];
+    // Trouver toutes les cartes de cette catégorie
+    const [catCardsRows] = await conn.query(
+      `SELECT card_id FROM card_category WHERE category_id = ?`,
+      [categoryId]
+    );
+    for (const row of catCardsRows) {
+      // On récupère l'index de la carte dans cardIds pour retrouver is_validated du seeder
+      const cardIndex = cardIds.findIndex(id => id === row.card_id);
+      const isValidated = cardIndex !== -1 ? cards[cardIndex].is_validated : 0;
+      await conn.execute(
+        `INSERT INTO patient_card (patient_id, card_id, category_id, is_validated) VALUES (?, ?, ?, ?)`,
+        [patientId, row.card_id, categoryId, isValidated]
+      );
+    }
   }
 
   // Réactiver les contraintes de clés étrangères

@@ -48,6 +48,7 @@ CREATE TABLE `card` (
 
 CREATE TABLE `category` (
   `id` int(11) NOT NULL,
+  `order_list` int(11) DEFAULT NULL,
   `name` varchar(100) NOT NULL,
   `description` varchar(100) DEFAULT NULL,
   `image` longblob DEFAULT NULL,
@@ -109,6 +110,7 @@ CREATE TABLE `patient_category` (
 -- Structure de la table `patient_category`
 --
 CREATE TABLE `patient_card` (
+  `id` int(11) NOT NULL,
   `patient_id` int(11) NOT NULL,
   `card_id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL,
@@ -228,6 +230,7 @@ ALTER TABLE `patient_category`
 -- Index pour la table `patient_category`
 --
 ALTER TABLE `patient_card`
+  ADD PRIMARY KEY (`id`),
   ADD KEY `patient_card_patient_FK` (`patient_id`),
   ADD KEY `patient_card_card_FK` (`card_id`),
   ADD KEY `patient_card_category_FK` (`category_id`);
@@ -345,7 +348,7 @@ ALTER TABLE `billing`
 --
 ALTER TABLE `patient_card`
   ADD CONSTRAINT `patient_card_card_FK` FOREIGN KEY (`card_id`) REFERENCES `card` (`id`),
-  ADD CONSTRAINT 'patient_card_category_FR' FOREIGN KEY (`category_id`) REFERENCES `category`(`id`),
+  ADD CONSTRAINT `patient_card_category_FK` FOREIGN KEY (`category_id`) REFERENCES `category`(`id`),
   ADD CONSTRAINT `patient_card_patient_FK` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id`);
 
 --

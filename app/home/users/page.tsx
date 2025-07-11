@@ -469,7 +469,7 @@ export default function UsersPage() {
           setIsEditModalOpen(false);
           setSelectedUser(null);
         }}
-        onEdit={fetchUsers} // à adapter
+        onEdit={fetchUsers}
         user={selectedUser}
       />
       {selectedUser && (
