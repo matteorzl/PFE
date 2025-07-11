@@ -199,10 +199,10 @@ export default function HomeScreen({ navigation }: Props) {
         />
         <Ionicons name="search" size={22} color="#1a3cff" style={{ position: 'absolute', right: 16 }} />
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: 8 }}>
         <TouchableOpacity
           style={[
-            styles.tabButton,
+            styles.tabButtonLeft,
             activeTab === 'inprogress' && styles.tabButtonActive
           ]}
           onPress={() => setActiveTab('inprogress')}
@@ -211,12 +211,12 @@ export default function HomeScreen({ navigation }: Props) {
             styles.tabButtonText,
             activeTab === 'inprogress' && styles.tabButtonTextActive
           ]}>
-            Séries en cours
+            En cours
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[
-            styles.tabButton,
+            styles.tabButtonRight,
             activeTab === 'completed' && styles.tabButtonActive
           ]}
           onPress={() => setActiveTab('completed')}
@@ -225,7 +225,7 @@ export default function HomeScreen({ navigation }: Props) {
             styles.tabButtonText,
             activeTab === 'completed' && styles.tabButtonTextActive
           ]}>
-            Séries terminées
+            Terminées
           </Text>
         </TouchableOpacity>
       </View>
@@ -448,12 +448,20 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
   },
-  tabButton: {
+  tabButtonLeft: {
     flex: 1,
     paddingVertical: 10,
     backgroundColor: '#e0e7ff',
     borderRadius: 20,
-    marginHorizontal: 20,
+    marginLeft: 20,
+    alignItems: 'center',
+  },
+  tabButtonRight: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: '#e0e7ff',
+    borderRadius: 20,
+    marginRight: 20,
     alignItems: 'center',
   },
   tabButtonActive: {
@@ -462,7 +470,7 @@ const styles = StyleSheet.create({
   tabButtonText: {
     color: '#1a3cff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   tabButtonTextActive: {
     color: '#fff',

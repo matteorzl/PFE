@@ -5,8 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function UserScreen() {
   const [user, setUser] = useState<any | null>(null);
+  const [patient, setPatient] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'infos' | 'bank'>('infos');
+  const [activeTab, setActiveTab] = useState<'infos' | 'bank' | 'therapist'>('infos');
   const [isPremium, setIsPremium] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [firstname, setFirstname] = useState(user?.firstname || '');
@@ -15,6 +16,8 @@ export default function UserScreen() {
   const [country, setCountry] = useState(user?.country || '');
   const [city, setCity] = useState(user?.city || '');
   const { id: userId } = useLocalSearchParams<{ id: string }>();
+  const [therapists, setTherapists] = useState<any[]>([]);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -29,8 +32,27 @@ export default function UserScreen() {
           setUser(null);
           setLoading(false);
         });
+        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${userId}`)
+        .then(res => res.json())
+        .then(data => {
+          setPatient(data);
+          setLoading(false);
+        })
+        .catch(() => {
+          setPatient(null);
+          setLoading(false);
+        });
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (activeTab === 'therapist') {
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/therapists`)
+        .then(res => res.json())
+        .then(data => setTherapists(data))
+        .catch(() => setTherapists([]));
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (userId) {
@@ -203,7 +225,7 @@ export default function UserScreen() {
                   )}
                 </View>
             </>
-          ) : (
+          ) : activeTab === 'bank' ? (
             <>
               <View style={styles.contentFirst}>
                 <Text style={styles.tab}>Statut abonnement</Text>
@@ -235,6 +257,60 @@ export default function UserScreen() {
                 </View>
               )}
             </>
+          ) : activeTab === 'therapist' && (
+            <>
+              <View style={styles.contentFirst}>
+                <Text style={styles.tab}>Orthophoniste</Text>
+              </View>
+              {!patient?.therapist_id ? (
+                <>
+                  <View style={styles.tab}>
+                    <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Sélectionner un thérapeute :</Text>
+                  </View>
+                  <View style={styles.tab}>
+                  {therapists.length === 0 ? (
+                    <Text>Aucun thérapeute disponible.</Text>
+                  ) : (
+                    therapists.map((therapist) => (
+                      <TouchableOpacity
+                        key={therapist.id}
+                        style={{
+                          padding: 10,
+                          backgroundColor: '#f5f5f5',
+                          borderRadius: 8,
+                          marginBottom: 8,
+                        }}
+                        onPress={async () => {
+                          // Appel API pour lier le patient à ce thérapeute
+                          try {
+                            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}/therapist`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ therapist_id: therapist.id }),
+                            });
+                            if (res.ok) {
+                              Alert.alert('Succès', 'Thérapeute assigné !');
+                              setPatient({ ...patient, therapist_id: therapist.id, therapist_name: therapist.name });
+                            } else {
+                              Alert.alert('Erreur', 'Impossible d\'assigner le thérapeute');
+                            }
+                          } catch (err) {
+                            Alert.alert('Erreur', 'Erreur réseau');
+                          }
+                        }}
+                      >
+                        <Text>{therapist.name}</Text>
+                      </TouchableOpacity>
+                    ))
+                  )}
+                  </View>
+                </>
+              ) : (
+                <Text>
+                  Thérapeute assigné : <Text style={{ fontWeight: 'bold' }}>{patient.therapist_name || 'ID ' + patient.therapist_id}</Text>
+                </Text>
+              )}
+            </>
           )}
         </View>
       </View>
@@ -253,6 +329,13 @@ export default function UserScreen() {
           >
             <Ionicons name="card-outline" size={22} color={activeTab === 'bank' ? "#5558fd" : "#888"} />
             <Text style={[styles.tabBarText, activeTab === 'bank' && styles.tabBarTextActive]}>Abonnement</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab('therapist')}
+          >
+            <Ionicons name="medical-outline" size={22} color={activeTab === 'therapist' ? "#5558fd" : "#888"} />
+            <Text style={[styles.tabBarText, activeTab === 'therapist' && styles.tabBarTextActive]}>Docteur</Text>
           </TouchableOpacity>
         </View>
     </KeyboardAvoidingView>

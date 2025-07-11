@@ -33,7 +33,7 @@ export default function RegisterScreen() {
       const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstname, lastname, email, password, country, city }),
+        body: JSON.stringify({ firstname, lastname, email, password, country, city, role : 'patient' }),
       });
       const data = await res.json();
       if (res.ok) {
