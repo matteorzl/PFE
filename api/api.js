@@ -19,6 +19,8 @@ const {
   getCategoriesOrderedForUser,
   /*patient*/
   getCardValidationStatusForUser,
+  getCardsNotInCategory,
+  addCardsToCategory,
   getUserCategoryProgress,
   cardValidated,
   /*category*/
@@ -318,6 +320,35 @@ app.get('/api/categories', async (req, res) => {
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération des catégories." });
+  }
+});
+
+// Récupérer les cartes non présentes dans une catégorie
+app.get('/api/categories/:categoryId/available-cards', async (req, res) => {
+  const { categoryId } = req.params;
+  try {
+    let cards = await getCardsNotInCategory(categoryId);
+    cards = cards.map(card => ({
+      ...card,
+      draw_animation: card.draw_animation
+        ? `data:image/png;base64,${card.draw_animation.toString('base64')}`
+        : null,
+    }));
+    res.status(200).json(cards);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération des cartes disponibles." });
+  }
+});
+
+// Ajouter une/des carte(s) dans une catégorie
+app.post('/api/categories/:categoryId/cards', async (req, res) => {
+  const { categoryId } = req.params;
+  const { cardIds } = req.body; // tableau d'ids
+  try {
+    await addCardsToCategory(categoryId, cardIds);
+    res.status(200).json({ message: "Cartes ajoutées à la catégorie !" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de l'ajout des cartes à la catégorie." });
   }
 });
 

@@ -127,7 +127,7 @@ const deleteUser = async (userId, role) => {
   try {
     if (role === 'therapist') {
       const [result] = await con.query(
-        'UPDATE users SET is_deleted = 1 WHERE id = ? RETURNING *',
+        'UPDATE users SET is_deleted = 1 WHERE id = ?',
         [userId]
       );
       if (!result || result.length === 0) {
@@ -384,6 +384,33 @@ async function getCategoryById(categoryId) {
   }
 }
 
+async function getCardsNotInCategory(categoryId) {
+  const query = `
+    SELECT * FROM card
+    WHERE id NOT IN (
+      SELECT card_id FROM card_category WHERE category_id = ?
+    )
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [categoryId]);
+  await con.end();
+  return rows;
+}
+
+async function addCardsToCategory(categoryId, cardIds) {
+  const con = await createConnection();
+  try {
+    for (const cardId of cardIds) {
+      await con.query(
+        'INSERT INTO card_category (card_id, category_id) VALUES (?, ?)',
+        [cardId, categoryId]
+      );
+    }
+  } finally {
+    await con.end();
+  }
+}
+
 async function getTherapistIdByUserId(userId) {
   const query = `SELECT id FROM Therapist WHERE user_id = ?`;
   try {
@@ -633,12 +660,13 @@ module.exports = {
   isPremium,
   createUserPayment,
   getCategoriesOrderedForUser,
-
   getCardValidationStatusForUser,
   getUserCategoryProgress,
   cardValidated,
 
   getAllCategories,
+  getCardsNotInCategory,
+  addCardsToCategory,
   getCategoryById,
   deleteCategory,
   updateCategory,
