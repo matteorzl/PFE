@@ -135,7 +135,7 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
         for (const cat of cats) {
           const cards = await fetch(`http://localhost:3001/api/categories/${cat.id}/cards`).then(r => r.json());
           const cardsWithStatus = await Promise.all(cards.map(async (card: any) => {
-            const res = await fetch(`http://localhost:3001/api/patient/${user.id}/card/${card.id}/status`);
+            const res = await fetch(`http://localhost:3001/api/patient/${user.id}/category/${cat.id}/card/${card.id}/status`);
             const { is_validated } = await res.json();
             return { ...card, is_validated };
           }));
