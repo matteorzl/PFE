@@ -41,6 +41,7 @@ export default function HomeScreen({ navigation }: Props) {
   const collapsedHeight = 0;
   const expandedHeight = Dimensions.get('window').height * 0.55;
   const panelHeight = useSharedValue(collapsedHeight);
+  const [activeTab, setActiveTab] = useState<'inprogress' | 'completed'>('inprogress');
 
   const animatedPanelStyle = useAnimatedStyle(() => ({
     height: withTiming(panelHeight.value, { duration: 300 }),
@@ -115,7 +116,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(()=> {
     if (!userId) return;
-  fetch(`http://172.20.10.2:3001/api/user/${userId}/premium`)
+  fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/user/${userId}/premium`)
     .then(res => res.json())
     .then(data => {
       // data.premium sera true ou false selon la réponse du backend
@@ -129,7 +130,7 @@ export default function HomeScreen({ navigation }: Props) {
   const handlePaymentSuccess = () => {
     // Rafraîchir le statut premium
     if (userId) {
-      fetch(`http://172.20.10.2:3001/api/user/${userId}/premium`)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/user/${userId}/premium`)
         .then(res => res.json())
         .then(data => setIsPremium(data.premium))
         .catch(() => setIsPremium(false));
@@ -140,19 +141,45 @@ export default function HomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     // Remplace l'URL par celle de ton API
-    fetch('http://172.20.10.2:3001/api/categories')
+    fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/categories`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
+    if (!userId || categories.length === 0) return;
+
+    const fetchProgressions = async () => {
+      const updatedCategories = await Promise.all(
+        categories.map(async (cat) => {
+          try {
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${userId}/category/${cat.id}/progress`);
+            const data = await res.json();
+            return { ...cat, progress: data.progress ?? 0 };
+          } catch {
+            return { ...cat, progress: 0 };
+          }
+        })
+      );
+      setCategories(updatedCategories);
+    };
+
+    fetchProgressions();
+    // eslint-disable-next-line
+  }, [userId, categories.length]);
+
+  useEffect(() => {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
   }, []);
 
-  const filteredCategories = categories.filter(cat =>
-    cat.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCategories = categories
+    .filter(cat => cat.name.toLowerCase().includes(search.toLowerCase()))
+    .filter(cat =>
+      activeTab === 'inprogress'
+        ? cat.progress < 100
+        : cat.progress === 100
+    );
 
   return (
     <View style={{ flex: 1, backgroundColor: '#eee', paddingTop: 60 }}>
@@ -172,9 +199,41 @@ export default function HomeScreen({ navigation }: Props) {
         />
         <Ionicons name="search" size={22} color="#1a3cff" style={{ position: 'absolute', right: 16 }} />
       </View>
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'inprogress' && styles.tabButtonActive
+          ]}
+          onPress={() => setActiveTab('inprogress')}
+        >
+          <Text style={[
+            styles.tabButtonText,
+            activeTab === 'inprogress' && styles.tabButtonTextActive
+          ]}>
+            Séries en cours
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === 'completed' && styles.tabButtonActive
+          ]}
+          onPress={() => setActiveTab('completed')}
+        >
+          <Text style={[
+            styles.tabButtonText,
+            activeTab === 'completed' && styles.tabButtonTextActive
+          ]}>
+            Séries terminées
+          </Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8 }}>
         {filteredCategories.map((cat: any, idx) => {
           const isLocked = !isPremium && cat.is_free === 0;
+          const isCompleted = cat.progress === 100;
+          const blur = Math.max(0, 10 - Math.round((cat.progress / 100) * 17));
           return (
             <TouchableOpacity
               key={cat.id}
@@ -197,12 +256,15 @@ export default function HomeScreen({ navigation }: Props) {
                   isLocked && styles.locked
                 ]}
                 resizeMode="cover"
-                blurRadius={isLocked ? 10 : (cat.progress === 0 ? 2 : 0)}
+                blurRadius={blur}
               />
               <View style={styles.cardOverlay} />
               <View style={styles.cardContent}>
                 <View>
-                  <Text style={styles.cardTitle}>
+                  <Text style={[
+                    styles.cardTitle,
+                    isCompleted && { color: '#FFD700' }
+                  ]}>
                     {cat.is_free === 0 && <CrownIcon />}
                     {cat.name}
                   </Text>
@@ -210,7 +272,12 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
                 <View style={{ alignItems: 'center' }}>
                   <StarsDifficulty difficulty={cat.difficulty} />
-                  <Text style={styles.progressLabel}>{cat.progress}%</Text>
+                  <Text style={[
+                    styles.progressLabel,
+                    isCompleted && { color: '#FFD700' }
+                  ]}>
+                    {cat.progress}%
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -380,5 +447,24 @@ const styles = StyleSheet.create({
     color: '#444',
     marginBottom: 24,
     textAlign: 'center',
-  }
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: '#e0e7ff',
+    borderRadius: 20,
+    marginHorizontal: 20,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: '#1a3cff',
+  },
+  tabButtonText: {
+    color: '#1a3cff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  tabButtonTextActive: {
+    color: '#fff',
+  },
 });

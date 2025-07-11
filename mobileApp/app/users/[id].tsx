@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function UserScreen() {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'infos' | 'bank'>('infos');
+  const [isPremium, setIsPremium] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [firstname, setFirstname] = useState(user?.firstname || '');
+  const [lastname, setLastname] = useState(user?.lastname || '');
+  const [mail, setMail] = useState(user?.mail || '');
+  const [country, setCountry] = useState(user?.country || '');
+  const [city, setCity] = useState(user?.city || '');
   const { id: userId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
   useEffect(() => {
     if (userId) {
-      fetch(`http://172.20.10.2:3001/api/users/${userId}`)
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`)
         .then(res => res.json())
         .then(data => {
           setUser(data);
@@ -24,6 +31,25 @@ export default function UserScreen() {
         });
     }
   }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/user/${userId}/premium`)
+        .then(res => res.json())
+        .then(data => setIsPremium(data.premium))
+        .catch(() => setIsPremium(false));
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (user) {
+      setFirstname(user.firstname || '');
+      setLastname(user.lastname || '');
+      setMail(user.mail || '');
+      setCountry(user.country || '');
+      setCity(user.city || '');
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -46,8 +72,21 @@ export default function UserScreen() {
     );
   }
 
+  function getEndOfMonthDate() {
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return end.toLocaleDateString('fr-FR');
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, justifyContent: 'flex-end' }}
+    >
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <TouchableOpacity onPress={() => router.replace('/series')} style={styles.backButton}>
         <Ionicons name="arrow-back" size={34} color="#302f2f" />
         </TouchableOpacity>
@@ -57,70 +96,173 @@ export default function UserScreen() {
         <View style={styles.cardContent}>
           {activeTab === 'infos' ? (
             <>
-              <View style={styles.contentFirst}>
-                <Text style={styles.tab}>Infos Personnelles</Text>
-              </View>
-              <View style={styles.content}>
-                <Text style={styles.label}>Nom : <Text style={styles.value}>{user.lastname}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
-              <View style={styles.content}>
-                <Text style={styles.label}>Prénom : <Text style={styles.value}>{user.firstname}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
-              <View style={styles.content}>
-                <Text style={styles.label}>Email : <Text style={styles.value}>{user.mail}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
-              <View style={styles.content}>
-                <Text style={styles.label}>Ville : <Text style={styles.value}>{user.city}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
-              <View style={styles.contentLast}>
-                <Text style={styles.label}>Pays : <Text style={styles.value}>{user.country}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
+            
+                <View style={styles.contentFirst}>
+                  <Text style={styles.tab}>Infos Personnelles</Text>
+                </View>
+                <View style={styles.content}>
+                <TextInput style={styles.label}>Prénom :</TextInput>
+                  <TextInput
+                    style={[
+                      styles.value,
+                      editMode && { color: '#b0b0b0' }
+                    ]}
+                    value={firstname}
+                    onChangeText={setFirstname}
+                    editable={editMode}
+                    placeholder="Prénom"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.content}>
+                <TextInput style={styles.label}>Nom :</TextInput>
+                  <TextInput
+                    style={[
+                      styles.value,
+                      editMode && { color: '#b0b0b0' }
+                    ]}
+                    value={lastname}
+                    onChangeText={setLastname}
+                    editable={editMode}
+                    placeholder="Nom"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.content}>
+                <TextInput style={styles.label}>Mail :</TextInput>
+                  <TextInput
+                    style={[
+                      styles.value,
+                      editMode && { color: '#b0b0b0' }
+                    ]}
+                    value={mail}
+                    onChangeText={setMail}
+                    editable={editMode}
+                    placeholder="Email"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+                <View style={styles.content}>
+                <TextInput style={styles.label}>Pays :</TextInput>
+                  <TextInput
+                    style={[
+                      styles.value,
+                      editMode && { color: '#b0b0b0' }
+                    ]}
+                    value={country}
+                    onChangeText={setCountry}
+                    editable={editMode}
+                    placeholder="Pays"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.contentLast}>
+                  <TextInput style={styles.label}>Ville :</TextInput>
+                  <TextInput
+                    style={[
+                      styles.value,
+                      editMode && { color: '#b0b0b0' }
+                    ]}
+                    value={city}
+                    onChangeText={setCity}
+                    editable={editMode}
+                    placeholder="Ville"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={{ alignItems: 'center', width: '100%', marginTop: 16 }}>
+                  {!editMode ? (
+                    <TouchableOpacity style={styles.button} onPress={() => setEditMode(true)}>
+                      <Text style={styles.buttonText}>Modifier</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={async () => {
+                        try {
+                          const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ firstname, lastname, mail, country, city }),
+                          });
+                          if (res.ok) {
+                            Alert.alert('Succès', 'Informations mises à jour !');
+                            setEditMode(false);
+                            // Optionnel : rafraîchir les infos utilisateur
+                          } else {
+                            Alert.alert('Erreur', 'Impossible de mettre à jour les informations');
+                          }
+                        } catch (err) {
+                          Alert.alert('Erreur', 'Erreur réseau');
+                        }
+                      }}
+                    >
+                      <Text style={styles.buttonText}>Enregistrer</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
             </>
           ) : (
             <>
               <View style={styles.contentFirst}>
-                <Text style={styles.tab}>Infos Bancaires</Text>
+                <Text style={styles.tab}>Statut abonnement</Text>
               </View>
-              <View style={styles.content}>
-                <Text style={styles.label}>IBAN :<Text style={styles.value}>{user.iban || 'Non renseigné'}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
+              <View style={styles.tab}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    color: isPremium ? '#F1D700' : '#302f2f',
+                    margin: 10,
+                    alignSelf: 'center',
+                  }}
+                >
+                  {isPremium ? '👑 Premium 👑' : 'Non premium'}
+                </Text>
               </View>
-              <View style={styles.contentLast}>
-                <Text style={styles.label}>Banque : <Text style={styles.value}>{user.bank || 'Non renseigné'}</Text></Text>
-                <Text style={styles.chevron}>&gt;</Text>
-              </View>
+              {isPremium && (
+                <View style={styles.tab}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      alignSelf: 'center',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Fin d'abonnement : {getEndOfMonthDate()}
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </View>
       </View>
+      </ScrollView>
       <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('infos')}
-        >
-          <Ionicons name="person-outline" size={22} color={activeTab === 'infos' ? "#5558fd" : "#888"} />
-          <Text style={[styles.tabBarText, activeTab === 'infos' && styles.tabBarTextActive]}>Infos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tabButton}
-          onPress={() => setActiveTab('bank')}
-        >
-          <Ionicons name="card-outline" size={22} color={activeTab === 'bank' ? "#5558fd" : "#888"} />
-          <Text style={[styles.tabBarText, activeTab === 'bank' && styles.tabBarTextActive]}>Bancaires</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab('infos')}
+          >
+            <Ionicons name="person-outline" size={22} color={activeTab === 'infos' ? "#5558fd" : "#888"} />
+            <Text style={[styles.tabBarText, activeTab === 'infos' && styles.tabBarTextActive]}>Infos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.tabButton}
+            onPress={() => setActiveTab('bank')}
+          >
+            <Ionicons name="card-outline" size={22} color={activeTab === 'bank' ? "#5558fd" : "#888"} />
+            <Text style={[styles.tabBarText, activeTab === 'bank' && styles.tabBarTextActive]}>Abonnement</Text>
+          </TouchableOpacity>
+        </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexGrow:1,
     backgroundColor: '#eef2fa',
     paddingTop: 24,
   },
@@ -160,7 +302,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   name: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#302f2f',
     marginBottom: 16,
@@ -195,22 +337,23 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   tab: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#302f2f',
     margin: 12,
     alignSelf: 'center',
   },
   label: {
-    fontSize: 16,
+    width:'20%',
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#302f2f',
     margin: 10,
   },
   value: {
-    justifyContent:'space-between',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'light',
+    width:'80%',
     color: '#5558fd',
     marginBottom: 4,
   },
@@ -249,5 +392,19 @@ const styles = StyleSheet.create({
   },
   tabBarTextActive: {
     color: '#5558fd',
+  },
+  button: {
+    backgroundColor: '#1a3cff',
+    padding: 3,
+    borderRadius: 50,
+    minWidth: '80%',
+    margin:8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

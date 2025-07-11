@@ -227,14 +227,56 @@ async function getCategoriesOrderedForUser(userId) {
   return rows;
 }
 
-async function getCardValidationStatusForUser(userId, cardId) {
+async function getCardValidationStatusForUser(userId, cardId, category_id) {
   const con = await createConnection();
   const [rows] = await con.query(
-    `SELECT is_validated FROM card_validation WHERE user_id = ? AND card_id = ? LIMIT 1`,
-    [userId, cardId]
+    `SELECT is_validated FROM card_validation WHERE user_id = ? AND card_id = ? AND category_id = ? LIMIT 1`,
+    [userId, cardId, category_id]
   );
   await con.end();
   return rows.length > 0 ? rows[0].is_validated : 0;
+}
+
+async function getUserCategoryProgress(userId, categoryId) {
+  const con = await createConnection();
+  // Nombre total de cartes dans la catégorie
+  const [totalRows] = await con.query(
+    `SELECT COUNT(*) AS total FROM card_category WHERE category_id = ?`,
+    [categoryId]
+  );
+  const total = totalRows[0]?.total || 0;
+
+  // Nombre de cartes validées par l'utilisateur dans cette catégorie
+  const [validatedRows] = await con.query(
+    `SELECT COUNT(*) AS validated FROM patient_card WHERE patient_id = ? AND category_id = ? AND is_validated = 1`,
+    [userId, categoryId]
+  );
+  const validated = validatedRows[0]?.validated || 0;
+
+  await con.end();
+
+  // Calcul du pourcentage
+  return total === 0 ? 0 : Math.round((validated / total) * 100);
+}
+
+async function cardValidated(userId, cardId, categoryId){
+  const con = await createConnection();
+  // Vérifier si la validation existe déjà
+  const [rows] = await con.query(
+    `SELECT 1 FROM patient_card WHERE patient_id = ? AND card_id = ? AND category_id = ? LIMIT 1`,
+    [userId, cardId, categoryId]
+  );
+  if (rows.length > 0) {
+    await con.end();
+    return { alreadyValidated: true };
+  }
+  // Sinon, insérer
+  await con.query(
+    `INSERT INTO patient_card (patient_id, card_id, category_id, is_validated) VALUES (?, ?, ?, 1)`,
+    [userId, cardId, categoryId]
+  );
+  await con.end();
+  return { alreadyValidated: false };
 }
 
 async function getAllCategories() {
@@ -561,6 +603,8 @@ module.exports = {
   getCategoriesOrderedForUser,
 
   getCardValidationStatusForUser,
+  getUserCategoryProgress,
+  cardValidated,
 
   getAllCategories,
   getCategoryById,

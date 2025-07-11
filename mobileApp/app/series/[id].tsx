@@ -3,9 +3,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { View, Text, Image, SafeAreaView, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { Audio, AVPlaybackStatus, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import * as ScreenOrientation from 'expo-screen-orientation';
-
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type RootStackParamList = {
   Home: undefined;
@@ -22,9 +22,14 @@ export default function HomeScreen({ navigation }: Props) {
   const soundRef = useRef<Audio.Sound | null>(null);
   const router = useRouter();
   const { id: categoryId } = useLocalSearchParams<{ id: string }>();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [hasSeenDraw, setHasSeenDraw] = useState(false);
+  const [hasSeenReal, setHasSeenReal] = useState(false);
+  const [soundPlayedSec, setSoundPlayedSec] = useState(0);
+  const soundTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    fetch(`http://172.20.10.2:3001/api/categories/${categoryId}/cards`)
+    fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/categories/${categoryId}/cards`)
       .then(res => res.json())
       .then(data => setCards(data))
       .catch(() => setCards([]));
@@ -39,6 +44,17 @@ export default function HomeScreen({ navigation }: Props) {
       ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     };
   }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem('userId').then(setUserId);
+  }, []);
+
+  useEffect(() => {
+    setHasSeenDraw(false);
+    setHasSeenReal(false);
+    setSoundPlayedSec(0);
+    if (soundTimer.current) clearInterval(soundTimer.current);
+  }, [card]);
 
   const handlePlaySound = async (card: any, idx: number) => {
     try {
@@ -71,9 +87,22 @@ export default function HomeScreen({ navigation }: Props) {
       const { sound } = await Audio.Sound.createAsync({ uri: card.sound_file });
       soundRef.current = sound;
       await sound.playAsync();
+      setSoundPlayedSec(0);
+      if (soundTimer.current) clearInterval(soundTimer.current);
+
+      let seconds = 0;
+      soundTimer.current = setInterval(() => {
+        seconds += 1;
+        setSoundPlayedSec(s => s + 1);
+        if (seconds >= 5) {
+          clearInterval(soundTimer.current!);
+        }
+      }, 1000);
+
       sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
         if (!status.isLoaded || (status.isLoaded && status.didJustFinish)) {
           setPlayingIndex(null);
+          if (soundTimer.current) clearInterval(soundTimer.current);
         }
       });
     } catch (e) {
@@ -87,6 +116,33 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   const card = cards[currentIndex];
+
+  useEffect(() => {
+    if (!userId || !card || !categoryId) return;
+    if (hasSeenDraw && hasSeenReal && soundPlayedSec >= 5) {
+      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/validate/card`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          cardId: card.id,
+          categoryId
+        })
+      })
+      .then(res => res.json())
+      .catch(() => {});
+    }
+  }, [hasSeenDraw, hasSeenReal, soundPlayedSec, userId, card, categoryId]);
+
+  // Quand il affiche l'animation dessinée
+  useEffect(() => {
+    if (card && !showReal[card.id]) setHasSeenDraw(true);
+  }, [card, showReal]);
+
+  // Quand il affiche l'animation réelle
+  useEffect(() => {
+    if (card && showReal[card.id]) setHasSeenReal(true);
+  }, [card, showReal]);
 
   return (
     <View style={{ flex: 1,}}>

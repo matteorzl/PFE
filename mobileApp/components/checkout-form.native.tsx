@@ -9,7 +9,7 @@ type CheckoutFormProps = {
   };
 
 async function fetchPaymentSheetParams() {
-  const res = await fetch('http://172.20.10.2:3001/api/payment-sheet', {
+  const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/payment-sheet`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' }
   });
@@ -64,7 +64,7 @@ export default function CheckoutForm({ userId, onPaymentSuccess }: CheckoutFormP
         } else {
             // Paiement Stripe OK, on enregistre les infos en base
             try {
-                await fetch('http://172.20.10.2:3001/api/payment', {
+                await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/payment`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

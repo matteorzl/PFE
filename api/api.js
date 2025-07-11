@@ -19,6 +19,8 @@ const {
   getCategoriesOrderedForUser,
   /*patient*/
   getCardValidationStatusForUser,
+  getUserCategoryProgress,
+  cardValidated,
   /*category*/
   getAllCategories,
   getCardsByCategory,
@@ -233,7 +235,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
 app.get('/api/user/:userId/categories', async (req, res) => {
   const { userId } = req.params;
   try {
-    const categories = await db.getCategoriesOrderedForUser(userId);
+    const categories = await getCategoriesOrderedForUser(userId);
     res.json(categories);
   } catch (err) {
     console.error(err);
@@ -244,14 +246,40 @@ app.get('/api/user/:userId/categories', async (req, res) => {
 //////////////
 /* PATIENT */
 ////////////
-app.get('/api/patient/:userId/card/:cardId/status', async (req, res) => {
-  const { userId, cardId } = req.params;
+app.get('/api/patient/:userId/category/:categoryId/card/:cardId/status', async (req, res) => {
+  const { userId, cardId, categoryId } = req.params;
   try {
-    const status = await db.getCardValidationStatusForUser(userId, cardId);
+    const status = await getCardValidationStatusForUser(userId, cardId, categoryId);
     res.json({ is_validated: status });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Erreur lors de la récupération du statut de la carte" });
+  }
+});
+
+app.get('/api/patient/:userId/category/:categoryId/progress', async (req, res) => {
+  const { userId, categoryId } = req.params;
+  try {
+    const progress = await getUserCategoryProgress(userId, categoryId);
+    res.json({ progress });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors du calcul de la progression" });
+  }
+});
+
+app.post('/api/validate/card', async (req,res)=> {
+  const { userId, cardId, categoryId } = req.body;
+  try {
+    const result = await cardValidated(userId, cardId, categoryId);
+    if (result.alreadyValidated) {
+      res.status(200).json({ message: "Carte déjà validée." });
+    } else {
+      res.status(201).json({ message: "Carte validée avec succès !" });
+    }
+  } catch (err) {
+    console.error("Erreur lors de la validation :", err);
+    res.status(500).json({ error: "Erreur lors de la validation de la carte." });
   }
 });
 

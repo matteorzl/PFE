@@ -9,7 +9,8 @@ import {
   TouchableOpacity, 
   KeyboardAvoidingView, 
   Platform,
-  ScrollView
+  ScrollView,
+  Text
 } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -23,7 +24,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://172.20.10.2:3001/api/login', {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/api/login`, {
         email,
         password,
       });
@@ -77,6 +78,11 @@ export default function LoginScreen() {
         />
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
           <ThemedText style={styles.loginText}>Se connecter</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.replace('/register')}>
+          <Text style={{ color: '#1a3cff', marginTop: 16, textAlign: 'center', textDecorationLine: 'underline' }}>
+            Pas encore de compte ? S'inscrire
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

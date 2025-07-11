@@ -1,53 +1,85 @@
-# Next.js & HeroUI Template
+🎵 SoundSwipes – Monorepo
+Projet musical fullstack comprenant :
 
-This is a template for creating applications using Next.js 14 (app directory) and HeroUI (v2).
+💻 Un frontend en Next.js
 
-[Try it on CodeSandbox](https://githubbox.com/heroui-inc/heroui/next-app-template)
+🔌 Une API en Express.js
 
-## Technologies Used
+📱 Une application mobile React Native (Expo)
 
-- [Next.js 14](https://nextjs.org/docs/getting-started)
-- [HeroUI v2](https://heroui.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Tailwind Variants](https://tailwind-variants.org)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+🚀 Prérequis
+Node.js ≥ 18.x
 
-## How to Use
+npm ≥ 9.x
 
-### Use the template with create-next-app
+(Recommandé) Yarn ou pnpm pour la gestion des dépendances monorepo
 
-To create a new project based on this template using `create-next-app`, run the following command:
+Expo CLI :
 
-```bash
-npx create-next-app -e https://github.com/heroui-inc/next-app-template
-```
+npm install -g expo-cli
 
-### Install dependencies
+🧩 Installation
+1. Cloner le dépôt
 
-You can use one of them `npm`, `yarn`, `pnpm`, `bun`, Example using `npm`:
+git clone https://github.com/matteorzl/PFE.git
+cd PFE
 
-```bash
+2. Installer les dépendances
+
+# À la racine du monorepo
 npm install
-```
 
-### Run the development server
+# Pour l'application mobile
+cd mobileApp
+npm install
 
-```bash
+3. Configuration de l'environnement
+🌐 Mobile (React Native)
+Créer un fichier .env dans PFE/mobileApp/ :
+
+API_IP=ton.ip.locale
+Remplace ton.ip.locale par l’adresse IP locale de ta machine (ex. 192.168.1.42)
+
+🗄️ Backend (Express / MySQL)
+Crée une base de données nommée SoundSwipes via phpMyAdmin ou un autre outil MySQL.
+
+Importe le fichier SQL :
+
+PFE/db/soundswipes.sql
+Vérifie la configuration dans PFE/db/db.config.js (utilisateur, mot de passe, nom de la DB, etc.).
+
+Lance le script de seed :
+
+node PFE/db/seed.js
+
+▶️ Lancement du projet
+
+1. Frontend – Next.js
+
+cd PFE
 npm run dev
-```
 
-### Setup pnpm (optional)
+2. Backend/API – Express.js
 
-If you are using `pnpm`, you need to add the following code to your `.npmrc` file:
+cd PFE
+npm run api
 
-```bash
-public-hoist-pattern[]=*@heroui/*
-```
+3. Application Mobile – Expo
 
-After modifying the `.npmrc` file, you need to run `pnpm install` again to ensure that the dependencies are installed correctly.
+cd PFE/mobileApp
+npm run start
 
-## License
+Télécharge l’application Expo Go sur ton smartphone.
 
-Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template/blob/main/LICENSE).
+Scanne le QR code affiché dans le terminal ou sur le navigateur pour lancer l’app.
+
+
+📁 Structure du projet
+
+PFE/
+├── api/             # Backend Express.js
+├── db/              # Base de données, config et seed
+├── mobileApp/       # Application React Native (Expo)
+├── .env             # (optionnel)
+└── package.json
+
