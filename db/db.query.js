@@ -3,11 +3,10 @@ const createConnection = require('./db.connect');
 
 // Fonction pour créer un utilisateur
 async function createUser(user) {
-  const { firstname, lastname, email, password, country, city } = user;
+  const { firstname, lastname, email, password, country, city, role } = user;
 
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(password, saltRounds);
-  const role = 'patient';
 
   const query = `
     INSERT INTO users (firstname, lastname, mail, password, role, country, city)
@@ -18,6 +17,15 @@ async function createUser(user) {
   try {
     const con = await createConnection();
     const [result] = await con.execute(query, values); 
+    const userId = result.insertId;
+
+    // Ajout automatique dans patient ou therapist selon le rôle
+    if (role === 'patient') {
+      await con.execute('INSERT INTO patient (user_id) VALUES (?)', [userId]);
+    } else if (role === 'therapist') {
+      await con.execute('INSERT INTO Therapist (user_id) VALUES (?)', [userId]);
+    }
+
     await con.end();
     return result;
   } catch (err) {
@@ -164,6 +172,18 @@ const deleteUser = async (userId,role) => {
   }
 };
 
+async function getPatientByUserId(userId) {
+  const query = `SELECT * FROM patient WHERE user_id = ?`;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [userId]);
+    await con.end();
+    return rows[0];
+  } catch (err) {
+    throw err;
+  }
+}
+
 async function isPremium(id) {
   const query = `
     SELECT 1 FROM billing
@@ -265,7 +285,14 @@ async function getCardValidationStatusForUser(userId, cardId, category_id) {
 
 async function getUserCategoryProgress(userId, categoryId) {
   const con = await createConnection();
-  // Nombre total de cartes dans la catégorie
+  const [patients] = await con.query(
+    `SELECT id FROM patient WHERE user_id = ?`,
+    [userId]
+  );
+  if (patients.length === 0) {
+    await con.end();
+    return 0;
+  }
   const [totalRows] = await con.query(
     `SELECT COUNT(*) AS total FROM card_category WHERE category_id = ?`,
     [categoryId]
@@ -275,7 +302,7 @@ async function getUserCategoryProgress(userId, categoryId) {
   // Nombre de cartes validées par l'utilisateur dans cette catégorie
   const [validatedRows] = await con.query(
     `SELECT COUNT(*) AS validated FROM patient_card WHERE patient_id = ? AND category_id = ? AND is_validated = 1`,
-    [userId, categoryId]
+    [patients[0].id, categoryId]
   );
   const validated = validatedRows[0]?.validated || 0;
 
@@ -287,10 +314,17 @@ async function getUserCategoryProgress(userId, categoryId) {
 
 async function cardValidated(userId, cardId, categoryId){
   const con = await createConnection();
-  // Vérifier si la validation existe déjà
+  const [patients] = await con.query(
+    `SELECT id FROM patient WHERE user_id = ?`,
+    [userId]
+  );
+  if (patients.length === 0) {
+    await con.end();
+    return 0;
+  }
   const [rows] = await con.query(
     `SELECT 1 FROM patient_card WHERE patient_id = ? AND card_id = ? AND category_id = ? LIMIT 1`,
-    [userId, cardId, categoryId]
+    [patients[0].id, cardId, categoryId]
   );
   if (rows.length > 0) {
     await con.end();
@@ -299,7 +333,7 @@ async function cardValidated(userId, cardId, categoryId){
   // Sinon, insérer
   await con.query(
     `INSERT INTO patient_card (patient_id, card_id, category_id, is_validated) VALUES (?, ?, ?, 1)`,
-    [userId, cardId, categoryId]
+    [patients[0].id, cardId, categoryId]
   );
   await con.end();
   return { alreadyValidated: false };
@@ -595,6 +629,22 @@ async function updateCard(id, name, draw_animation, real_animation, sound_file) 
   }
 }
 
+async function getAllTherapists() {
+  const query = `SELECT * FROM therapist
+      where is_validated = 1`;
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query);
+    await con.end();
+    return rows;
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des therapeutes :", err);
+    throw err;
+  }
+}
+
 // Supprimer une carte
 async function deleteCard(cardId) {
   const con = await createConnection();
@@ -631,6 +681,8 @@ module.exports = {
   getCardValidationStatusForUser,
   getUserCategoryProgress,
   cardValidated,
+  getPatientByUserId,
+  getAllTherapists,
 
   getAllCategories,
   getCategoryById,

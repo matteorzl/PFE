@@ -19,6 +19,7 @@ export default function RegisterPage() {
       password: formData.password as string,
       country: formData.country as string || "",
       city: formData.city as string || "",
+      role : 'therapist'
     };
 
     try {

@@ -18,6 +18,7 @@ const {
   createUserPayment,
   getCategoriesOrderedForUser,
   /*patient*/
+  getPatientByUserId,
   getCardValidationStatusForUser,
   getUserCategoryProgress,
   cardValidated,
@@ -38,6 +39,7 @@ const {
   updateCard,
   deleteCard,
   /*Therapist*/
+  getAllTherapists,
   getTherapistIdByUserId,
 } = require('../db/db.query');
 
@@ -253,6 +255,17 @@ app.get('/api/user/:userId/categories', async (req, res) => {
 //////////////
 /* PATIENT */
 ////////////
+app.get('/api/patient/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const patient = await getPatientByUserId(userId);
+    if (!patient) return res.status(404).json({ error: "Patient not found" });
+    res.json(patient);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération du patient" });
+  }
+});
+
 app.get('/api/patient/:userId/category/:categoryId/card/:cardId/status', async (req, res) => {
   const { userId, cardId, categoryId } = req.params;
   try {
@@ -560,5 +573,14 @@ app.delete('/api/cards/:id', async (req, res) => {
     } else {
       res.status(500).json({ error: "Erreur lors de la suppression de la carte." });
     }
+  }
+});
+
+app.get('/api/therapists', async (req, res) => {
+  try {
+    let therapists = await getAllTherapists();
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération des therapeutes." });
   }
 });
