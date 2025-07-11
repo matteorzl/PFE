@@ -384,12 +384,12 @@ app.get('/api/categories/:categoryId/cards', async (req, res) => {
 
 // Créer une nouvelle catégorie
 app.post('/api/categories', upload.single('image'), async (req, res) => {
-  const { name, description, therapistId, is_free } = req.body;
+  const { name, description, therapistId, is_free, difficulty } = req.body;
   const safeTherapistId = therapistId ? therapistId : null;
   const image = req.file ? req.file.buffer : null;
 
   try {
-    await createCategory(name, description, safeTherapistId, image, is_free);
+    await createCategory(name, description, safeTherapistId, image, is_free, difficulty);
     res.status(201).json({ message: "Catégorie créée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la création de la catégorie :", err);
@@ -400,11 +400,11 @@ app.post('/api/categories', upload.single('image'), async (req, res) => {
 // Récupérer une catégorie par son id
 app.patch('/api/categories/:categoryId', upload.single('image'), async (req, res) => {
   const { categoryId } = req.params;
-  const { name, description, is_free } = req.body;
+  const { name, description, is_free, difficulty } = req.body;
   const image = req.file ? req.file.buffer : null;
 
   try {
-    await updateCategory(categoryId, name, description, image, is_free);
+    await updateCategory(categoryId, name, description, image, is_free, difficulty);
     res.status(200).json({ message: "Catégorie modifiée avec succès !" });
   } catch (err) {
     console.error("Erreur lors de la modification de la catégorie :", err);
