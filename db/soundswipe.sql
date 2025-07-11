@@ -284,6 +284,12 @@ ALTER TABLE `patient`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT pour la table `patient_card`
+--
+ALTER TABLE `patient_card`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `therapist`
 --
 ALTER TABLE `therapist`
