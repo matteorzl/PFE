@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { Spinner, Breadcrumbs, BreadcrumbItem } from "@heroui/react";
+import { Spinner, Breadcrumbs, BreadcrumbItem, Button } from "@heroui/react";
+import { AddCardsToCategoryModal } from "@/components/category/AddCardsToCategoryModal";
 import {
   DndContext,
   closestCenter,
@@ -30,6 +31,15 @@ interface CardItem {
   is_validated: boolean;
   order_list: number;
 }
+
+export const PlusIcon = (props: any) => (
+  <svg aria-hidden="true" fill="none" focusable="false" height={24} width={24} {...props}>
+    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}>
+      <path d="M6 12h12" />
+      <path d="M12 18V6" />
+    </g>
+  </svg>
+);
 
 function SortableCard({ card }: { card: CardItem }) {
   const {
@@ -71,6 +81,7 @@ function SortableCard({ card }: { card: CardItem }) {
 export default function CategoryCardsPage() {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const searchParams = useSearchParams();
   const params = useParams();
   const categoryName = searchParams.get('name');
@@ -84,21 +95,22 @@ export default function CategoryCardsPage() {
     })
   );
 
-  useEffect(() => {
-    async function fetchCards() {
-      try {
-        const response = await fetch(`http://localhost:3001/api/categories/${categoryId}/cards`);
-        if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des cartes");
-        }
-        const data = await response.json();
-        setCards(data);
-      } catch (error) {
-        console.error("Erreur :", error);
-      } finally {
-        setLoading(false);
+  const fetchCards = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/categories/${categoryId}/cards`);
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des cartes");
       }
+      const data = await response.json();
+      setCards(data);
+    } catch (error) {
+      console.error("Erreur :", error);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchCards();
   }, [categoryId]);
 
@@ -134,8 +146,18 @@ const handleDragEnd = (event: DragEndEvent) => {
         <BreadcrumbItem onClick={() => router.push('/home/series')}>Séries</BreadcrumbItem>
         <BreadcrumbItem>{categoryName}</BreadcrumbItem>
       </Breadcrumbs>
-      <h1 className="text-2xl font-bold mb-4">Cartes</h1>
-      
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold">Cartes</h1>
+        <Button color="primary" endContent={<PlusIcon />} onPress={() => setAddModalOpen(true)}>
+          Ajouter des cartes
+        </Button>
+      </div>
+      <AddCardsToCategoryModal
+        isOpen={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        categoryId={Array.isArray(categoryId) ? categoryId[0] : (categoryId ?? "")}
+        onCardsAdded={fetchCards}
+      />
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

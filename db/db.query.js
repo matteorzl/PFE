@@ -50,6 +50,10 @@ async function loginUser(email, password) {
 
     const user = rows[0];
 
+    if (user.is_deleted === 1) {
+      throw new Error("Utilisateur non trouvé");
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new Error("Mot de passe incorrect");
@@ -126,45 +130,47 @@ async function updateUser(id, firstname, lastname, mail) {
 }
 
 // Supprimer un utilisateur
-const deleteUser = async (userId,role) => {
+const deleteUser = async (userId, role) => {
   const con = await createConnection();
   try {
     if (role === 'therapist') {
-      // Récupérer l'id du thérapeute
-      const [therapistId] = await con.query(
-        'SELECT id FROM Therapist WHERE user_id = ?',
+      const [result] = await con.query(
+        'UPDATE users SET is_deleted = 1 WHERE id = ?',
         [userId]
       );
-      // Supprimer les associations de thérapeute avec les catégories
-      await con.query(
-        'DELETE FROM therapist_category WHERE therapist_id = ?',
-        [therapistId[0].id]
-      );
-      // Supprimer le thérapeute
-      await con.query('DELETE FROM Therapist WHERE user_id = ?', [userId]);
+      if (!result || result.length === 0) {
+        throw new Error('Utilisateur non trouvé');
+      }
+      return result[0];
     }
     if (role === 'patient') {
-      const [patientid] = await con.query(
+      // Récupérer l'id du patient
+      const [patientidRows] = await con.query(
         'SELECT id FROM patient WHERE user_id = ?',
         [userId]
       );
-      // Supprimer les associations de patient avec les catégories
-      await con.query(
-        'DELETE FROM patient_category WHERE patient_id = ?',
-        [patientid[0].id]
-      );
+      if (!patientidRows || patientidRows.length === 0) {
+        throw new Error('Patient non trouvé');
+      }
+      const patientId = patientidRows[0].id;
+      // Suppression en cascade des associations
+      await con.query('DELETE FROM patient_category WHERE patient_id = ?', [patientId]);
+      await con.query('DELETE FROM patient_card WHERE patient_id = ?', [patientId]);
+      await con.query('DELETE FROM billing WHERE user_id = ?', [userId]);
+      // Ajoute ici d'autres suppressions si tu as d'autres tables associées au patient
       // Supprimer le patient
       await con.query('DELETE FROM patient WHERE user_id = ?', [userId]);
+      // Mettre à jour le champ is_deleted dans users
+      const [result] = await con.query(
+        'DELETE FROM users WHERE id = ?',
+        [userId]
+      );
+      if (!result || result.length === 0) {
+        throw new Error('Utilisateur non trouvé');
+      }
+      return result[0];
     }
-
-    const [result] = await con.query(
-      'DELETE FROM users WHERE id = ? RETURNING *',
-      [userId]
-    );
-    if (!result || result.length === 0) {
-      throw new Error('Utilisateur non trouvé');
-    }
-    return result[0];
+    throw new Error('Rôle non supporté pour la suppression');
   } catch (error) {
     throw error;
   } finally {
@@ -224,7 +230,7 @@ async function getUserById(id) {
 }
 
 async function getAllUsers() {
-  const query = `SELECT * FROM users`;
+  const query = `SELECT * FROM users WHERE is_deleted IS NULL OR is_deleted = 0`;
 
   try {
     const con = await createConnection();
@@ -409,6 +415,33 @@ async function getCategoryById(categoryId) {
   catch (err) {
     console.error("Erreur lors de la récupération des cartes :", err);
     throw err;
+  }
+}
+
+async function getCardsNotInCategory(categoryId) {
+  const query = `
+    SELECT * FROM card
+    WHERE id NOT IN (
+      SELECT card_id FROM card_category WHERE category_id = ?
+    )
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [categoryId]);
+  await con.end();
+  return rows;
+}
+
+async function addCardsToCategory(categoryId, cardIds) {
+  const con = await createConnection();
+  try {
+    for (const cardId of cardIds) {
+      await con.query(
+        'INSERT INTO card_category (card_id, category_id) VALUES (?, ?)',
+        [cardId, categoryId]
+      );
+    }
+  } finally {
+    await con.end();
   }
 }
 
@@ -677,7 +710,6 @@ module.exports = {
   isPremium,
   createUserPayment,
   getCategoriesOrderedForUser,
-
   getCardValidationStatusForUser,
   getUserCategoryProgress,
   cardValidated,
@@ -685,6 +717,8 @@ module.exports = {
   getAllTherapists,
 
   getAllCategories,
+  getCardsNotInCategory,
+  addCardsToCategory,
   getCategoryById,
   deleteCategory,
   updateCategory,

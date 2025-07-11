@@ -87,7 +87,7 @@ CREATE TABLE `patient` (
   `phone` varchar(20) DEFAULT NULL,
   `parent_name` varchar(100) DEFAULT NULL,
   `parent_lastname` varchar(20) DEFAULT NULL,
-  `is_accepted` int(11) DEFAULT NULL
+  `is_accepted` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -133,6 +133,7 @@ CREATE TABLE `therapist` (
   `user_id` int(11) NOT NULL,
   `professional_number` varchar(11) DEFAULT NULL,
   `indentification_type` ENUM('ADELI', 'RPPS') DEFAULT NULL,
+  `is_validated` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

@@ -122,6 +122,9 @@ export const CreateModal = ({ isOpen, onClose, onCreated }: CreateModalProps) =>
           {error && <p className="text-danger text-sm mt-2">{error}</p>}
         </ModalBody>
         <ModalFooter>
+          <Button variant="flat" onPress={onClose} isDisabled={loading}>
+            Annuler
+          </Button>
           <Button
             color="primary"
             onPress={() => handleSubmit()}
@@ -129,9 +132,6 @@ export const CreateModal = ({ isOpen, onClose, onCreated }: CreateModalProps) =>
             isDisabled={!name || !description}
           >
             Créer
-          </Button>
-          <Button variant="flat" onPress={onClose} isDisabled={loading}>
-            Annuler
           </Button>
         </ModalFooter>
       </ModalContent>
