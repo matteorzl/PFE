@@ -610,7 +610,7 @@ app.delete('/api/cards/:id', async (req, res) => {
 app.get('/api/therapists', async (req, res) => {
   try {
     let therapists = await getAllTherapists();
-    res.json(categories);
+    res.json(therapists);
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération des therapeutes." });
   }

@@ -663,8 +663,12 @@ async function updateCard(id, name, draw_animation, real_animation, sound_file) 
 }
 
 async function getAllTherapists() {
-  const query = `SELECT * FROM therapist
-      where is_validated = 1`;
+  const query = `
+    SELECT therapist.id, CONCAT(users.firstname, ' ', users.lastname) AS name
+    FROM therapist
+    JOIN users ON users.id = therapist.user_id
+    WHERE therapist.is_validated = 1
+  `;
 
   try {
     const con = await createConnection();
