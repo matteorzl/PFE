@@ -15,6 +15,7 @@ export const CreateModal = ({ isOpen, onClose, onCreated }: CreateModalProps) =>
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFree, setIsFree] = useState("1");
+  const [difficulty, setDifficulty] = useState("FACILE");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -42,6 +43,7 @@ export const CreateModal = ({ isOpen, onClose, onCreated }: CreateModalProps) =>
       formData.append("image", file);
     }
     formData.append("is_free", isFree);
+    formData.append("difficulty", difficulty);
 
     try {
       const res = await fetch("http://localhost:3001/api/categories", {
@@ -117,6 +119,19 @@ export const CreateModal = ({ isOpen, onClose, onCreated }: CreateModalProps) =>
             >
               <Radio value="1">Gratuit</Radio>
               <Radio value="0">Premium</Radio>
+            </RadioGroup>
+          </div>
+          <div className="mb-2">
+            <label className="block mb-1 font-medium">Difficulté</label>
+            <RadioGroup
+              orientation="horizontal"
+              value={difficulty}
+              onValueChange={setDifficulty}
+              className="gap-4"
+            >
+              <Radio value="FACILE">Facile</Radio>
+              <Radio value="MOYEN">Moyen</Radio>
+              <Radio value="DIFFICILE">Difficile</Radio>
             </RadioGroup>
           </div>
           {error && <p className="text-danger text-sm mt-2">{error}</p>}

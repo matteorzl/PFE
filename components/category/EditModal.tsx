@@ -20,6 +20,8 @@ interface EditCategoryModalProps {
     name: string;
     description: string;
     image?: string;
+    is_free?: number;
+    difficulty?: string;
   } | null;
 }
 
@@ -29,6 +31,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
   const [file, setFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isFree, setIsFree] = useState(true);
+  const [difficulty, setDifficulty] = useState("FACILE");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,6 +43,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
       });
       setFile(null);
       setIsFree(category.is_free === 1); // <-- Ajoute ceci
+      setDifficulty(category.difficulty || "FACILE");
     }
   }, [category]);
 
@@ -66,6 +70,7 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
         formData.append("image", file);
       }
       formData.append("is_free", isFree ? "1" : "0");
+      formData.append("difficulty", difficulty);
       const res = await fetch(`http://localhost:3001/api/categories/${category.id}`, {
         method: "PATCH",
         body: formData,
@@ -143,6 +148,38 @@ export const EditModal = ({ isOpen, onClose, onEdit, category }: EditCategoryMod
                       onChange={() => setIsFree(false)}
                     />
                     Premium
+                  </label>
+                </div>
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-medium">Difficulté</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="difficulty"
+                      checked={difficulty === "FACILE"}
+                      onChange={() => setDifficulty("FACILE")}
+                    />
+                    Facile
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="difficulty"
+                      checked={difficulty === "MOYEN"}
+                      onChange={() => setDifficulty("MOYEN")}
+                    />
+                    Moyen
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="difficulty"
+                      checked={difficulty === "DIFFICILE"}
+                      onChange={() => setDifficulty("DIFFICILE")}
+                    />
+                    Difficile
                   </label>
                 </div>
               </div>

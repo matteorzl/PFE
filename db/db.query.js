@@ -380,14 +380,14 @@ async function getCardsByCategory(categoryId) {
   }
 }
 
-async function updateCategory(id, name, description, image, is_free) {
+async function updateCategory(id, name, description, image, is_free, difficulty) {
   let query, values;
   if (image) {
-    query = `UPDATE category SET name = ?, description = ?, image = ?, is_free = ? WHERE id = ?`;
-    values = [name, description, image, is_free, id];
+    query = `UPDATE category SET name = ?, description = ?, image = ?, is_free = ?, difficulty = ? WHERE id = ?`;
+    values = [name, description, image, is_free, difficulty, id];
   } else {
-    query = `UPDATE category SET name = ?, description = ?, is_free = ? WHERE id = ?`;
-    values = [name, description, is_free, id];
+    query = `UPDATE category SET name = ?, description = ?, is_free = ?, difficulty = ? WHERE id = ?`;
+    values = [name, description, is_free, difficulty, id];
   }
 
   try {
@@ -512,12 +512,12 @@ const deleteCategory = async (categoryId) => {
   }
 };
 
-async function createCategory(name, description, therapistId, image, is_free) {
+async function createCategory(name, description, therapistId, image, is_free, difficulty) {
   const query = `
-    INSERT INTO category (name, description, image, created_by, is_free)
-    VALUES (?, ?, ?, ?, ?);
+    INSERT INTO category (name, description, image, created_by, is_free, difficulty)
+    VALUES (?, ?, ?, ?, ?, ?);
   `;
-  const values = [name, description, image, therapistId, is_free];
+  const values = [name, description, image, therapistId, is_free, difficulty];
 
   try {
     const con = await createConnection();
