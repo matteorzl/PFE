@@ -23,6 +23,8 @@ import { useRouter } from "next/navigation";
 import { EditModal } from "@/components/user/EditModal";
 import { DeleteModal } from "@/components/user/DeleteModal";
 import { OrderCategoriesUserModal } from "@/components/user/OrderCategoriesUserModal";
+import { ValidateModal } from "@/components/user/validateModal";
+import { TherapistInfoModal } from "@/components/user/TherapistInfoModal";
 import Cookies from "js-cookie";
 
 export const PlusIcon = (props: any) => (
@@ -44,6 +46,17 @@ export const ChevronDownIcon = (props: any) => (
       strokeMiterlimit={10}
       strokeWidth={1.5}
     />
+  </svg>
+);
+
+const ValidateIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-green-500">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+);
+const RefuseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-red-500">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
   </svg>
 );
 
@@ -206,10 +219,11 @@ const columns = [
   { name: "PAYS", uid: "country", sortable: true },
   { name: "VILLE", uid: "city", sortable: true },
   { name: "RÔLE", uid: "role", sortable: true },
+  { name: "VALIDATION", uid: "validation" },
   { name: "ACTIONS", uid: "actions" },
 ];
 
-const INITIAL_VISIBLE_COLUMNS = ["lastname", "firstname", "mail", "role", "actions"];
+const INITIAL_VISIBLE_COLUMNS = ["lastname", "firstname", "mail", "role", "validation", "actions"];
 
 type User = {
   id: string;
@@ -219,6 +233,9 @@ type User = {
   country: string;
   city: string;
   role: string;
+  is_validated: number | null;
+  is_accepted: number | null;
+  therapist_id?: string;
 };
 
 export default function UsersPage() {
@@ -230,6 +247,11 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isValidateModalOpen, setIsValidateModalOpen] = useState(false);
+  const [userForValidation, setUserForValidation] = useState<User | null>(null);
+  const [isTherapistInfoModalOpen, setIsTherapistInfoModalOpen] = useState(false);
+  const [userForTherapistInfo, setUserForTherapistInfo] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
 
   // Filtres et colonnes
   const [filterValue, setFilterValue] = useState("");
@@ -248,7 +270,66 @@ export default function UsersPage() {
       body: JSON.stringify({ selectedUser: { role } }),
     });
     if (!res.ok) throw new Error("Erreur lors de la suppression");
-    await fetchUsers(); // Pour rafraîchir la liste après suppression
+    await fetchUsers();
+  };
+
+  const handleValidateTherapist = async (id: string, is_validated: number) => {
+    const token = Cookies.get("token");
+    const res = await fetch(`http://localhost:3001/api/therapist/${id}/validate`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ is_validated }),
+    });
+    if (!res.ok) throw new Error("Erreur lors de la validation");
+    await fetchUsers();
+  };
+
+  const handleOpenValidateModal = (user: User) => {
+    setUserForValidation(user);
+    setIsValidateModalOpen(true);
+  };
+  const handleCloseValidateModal = () => {
+    setIsValidateModalOpen(false);
+    setUserForValidation(null);
+  };
+  const handleValidate = async () => {
+    if (userForValidation && userForValidation.role === "therapist") {
+      await handleValidateTherapist(userForValidation.id, 1);
+      handleCloseValidateModal();
+    }
+    if (userForValidation && userForValidation.role === "patient") {
+      await handleValidatePatient(userForValidation.id, 1);
+      handleCloseValidateModal();
+    }
+  };
+  const handleRefuse = async () => {
+    if (userForValidation && userForValidation.role === "therapist") {
+      await handleValidateTherapist(userForValidation.id, 2);
+      handleCloseValidateModal();
+    }
+    if (userForValidation && userForValidation.role === "patient") {
+      await handleValidatePatient(userForValidation.id, 2);
+      handleCloseValidateModal();
+    }
+  };
+
+  // Ajout de la validation des patients pour les thérapeutes
+  const handleValidatePatient = async (id: string, is_accepted: number) => {
+    const token = Cookies.get("token");
+    console.log('ID:', id);
+    const res = await fetch(`http://localhost:3001/api/validate/patient/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ is_accepted }),
+    });
+    if (!res.ok) throw new Error("Erreur lors de la validation du patient");
+    await fetchUsers();
   };
 
   const headerColumns = useMemo(() => {
@@ -256,6 +337,7 @@ export default function UsersPage() {
     return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
   }, [visibleColumns]);
 
+  // Filtrage des utilisateurs selon le rôle connecté
   const filteredItems = useMemo(() => {
     let filtered = [...rows];
     if (hasSearchFilter) {
@@ -269,8 +351,13 @@ export default function UsersPage() {
     if (!statusFilter.has("all")) {
       filtered = filtered.filter((user) => statusFilter.has(user.role));
     }
+    if (currentUser?.role === "therapist") {
+      filtered = filtered.filter(
+        (user) => user.role === "patient" && user.therapist_id === currentUser.therapistId
+      );
+    }
     return filtered;
-  }, [rows, filterValue, statusFilter]);
+  }, [rows, filterValue, statusFilter, currentUser]);
 
   // Rendu des cellules
   const renderCell = useCallback((user: any, columnKey: any) => {
@@ -282,20 +369,78 @@ export default function UsersPage() {
             {cellValue}
           </Chip>
         );
+      case "validation":
+        if (user.role === "therapist") {
+            const isValidated = user.is_validated;
+            if (isValidated === null) {
+              return (
+                <div className="flex gap-2">
+                  <Button
+                    className="rounded-full bg-gray-300 hover:bg-gray-400 transition text-white"
+                    title="En attente"
+                    onClick={() => handleOpenValidateModal(user)}
+                  >
+                    En attente
+                  </Button>
+                </div>
+              );
+            } else if (isValidated === 1) {
+              return <span className="text-green-600">Validé</span>;
+            } else if (isValidated === 2) {
+              return <span className="text-red-600">Refusé</span>;
+            }
+        }
+        // Validation des patients par le thérapeute
+        if (user.role === "patient" && currentUser?.role === "therapist") {
+          const isAccepted = user.is_accepted;
+          if (isAccepted === null) {
+            return (
+              <div className="flex gap-2">
+                <Button
+                    className="rounded-full bg-gray-300 hover:bg-gray-400 transition text-white"
+                    title="En attente"
+                    onClick={() => handleOpenValidateModal(user)}
+                  >
+                    En attente
+                  </Button>
+              </div>
+            );
+          } else if (isAccepted === 1) {
+            return <span className="text-green-600">Validé</span>;
+          } else if (isAccepted === 2) {
+            return <span className="text-red-600">Refusé</span>;
+          }
+        }
+        return null;
       case "actions":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip content="Voir les séries de l'utilisateur">
-              <span
-                className="text-lg text-default-400 cursor-pointer active:opacity-50"
-                onClick={() => {
-                  setUserForOrderCategories(user);
-                  setIsOrderCategoriesModalOpen(true);
-                }}
-              >
-                <EyeIcon />
-              </span>
-            </Tooltip>
+            {user.role === "patient" && (
+              <Tooltip content="Voir les séries de l'utilisateur">
+                <span
+                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                  onClick={() => {
+                    setUserForOrderCategories(user);
+                    setIsOrderCategoriesModalOpen(true);
+                  }}
+                >
+                  <EyeIcon />
+                </span>
+              </Tooltip>
+            )}
+            {user.role === "therapist" && (
+              <Tooltip content="Voir les informations du thérapeute">
+                <span
+                  className="text-lg text-default-400 cursor-pointer active:opacity-50"
+                  onClick={() => {
+                    setUserForTherapistInfo(user);
+                    setIsTherapistInfoModalOpen(true);
+                  }}
+                >
+                  <EyeIcon />
+                </span>
+              </Tooltip>
+            )}
             <Tooltip content="Modifier">
               <span
                 className="text-lg text-default-400 cursor-pointer active:opacity-50"
@@ -323,7 +468,7 @@ export default function UsersPage() {
       default:
         return cellValue;
     }
-  }, []);
+  }, [currentUser]);
   const fetchUsers = async () => {
       const token = Cookies.get("token");
       const res = await fetch("http://localhost:3001/api/users", {
@@ -339,6 +484,20 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    // Récupérer l'utilisateur connecté depuis le cookie (ou API si besoin)
+    const userCookie = Cookies.get("user");
+    if (userCookie) {
+      try {
+        setCurrentUser(JSON.parse(userCookie));
+      } catch {
+        setCurrentUser(null);
+      }
+    } else {
+      setCurrentUser(null);
+    }
   }, []);
 
   // Top content (barre de recherche, filtres, colonnes, bouton add)
@@ -454,7 +613,9 @@ export default function UsersPage() {
         <TableBody
           items={filteredItems}
           isLoading={loading}
-          emptyContent="Aucun utilisateur trouvé."
+          emptyContent={currentUser?.role === 'therapist'
+  ? "Aucun patient assigné à vous."
+  : "Aucun utilisateur trouvé."}
         >
           {(item: any) => (
             <TableRow key={item.id}>
@@ -493,6 +654,21 @@ export default function UsersPage() {
           user={userForOrderCategories}
         />
       )}
+      <ValidateModal
+        open={isValidateModalOpen}
+        onClose={handleCloseValidateModal}
+        user={userForValidation}
+        onValidate={handleValidate}
+        onRefuse={handleRefuse}
+      />
+      <TherapistInfoModal
+        open={isTherapistInfoModalOpen}
+        onClose={() => {
+          setIsTherapistInfoModalOpen(false);
+          setUserForTherapistInfo(null);
+        }}
+        user={userForTherapistInfo}
+      />
     </div>
   );
 }

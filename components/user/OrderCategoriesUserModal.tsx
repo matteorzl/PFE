@@ -154,7 +154,7 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
       const newCategories = arrayMove(categories, oldIndex, newIndex);
       setCategories(newCategories);
   
-      fetch(`http://localhost:3001/api/user/${user.id}/categories/order`, {
+      fetch(`http://localhost:3001/api/user/${user?.id}/categories/order`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ categoryIds: newCategories.map(cat => cat.id) })

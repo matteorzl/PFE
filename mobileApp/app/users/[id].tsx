@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { SelectList } from 'react-native-dropdown-select-list'
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,33 +16,42 @@ export default function UserScreen() {
   const [mail, setMail] = useState(user?.mail || '');
   const [country, setCountry] = useState(user?.country || '');
   const [city, setCity] = useState(user?.city || '');
+  const [parentFirstname, setParentFirstname] = useState(patient?.parent_firstname || '');
+  const [parentLastname, setParentLastname] = useState(patient?.parent_lastname || '');
+  const [phone, setPhone] = useState(patient?.phone || '');
   const { id: userId } = useLocalSearchParams<{ id: string }>();
   const [therapists, setTherapists] = useState<any[]>([]);
+  const [patientTherapist, setPatientTherapist] = useState<any | null>(null);
+  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(null);
 
   const router = useRouter();
 
   useEffect(() => {
     if (userId) {
-      fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`)
-        .then(res => res.json())
-        .then(data => {
-          setUser(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setUser(null);
-          setLoading(false);
-        });
-        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${userId}`)
-        .then(res => res.json())
-        .then(data => {
-          setPatient(data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setPatient(null);
-          setLoading(false);
-        });
+      setLoading(true);
+      Promise.all([
+        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`).then(res => res.json()),
+        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${userId}`).then(res => res.json())
+      ])
+      .then(([userData, patientData]) => {
+        setUser(userData);
+        setPatient(patientData);
+        // Si le patient a déjà un therapist_id, on récupère ses infos
+        if (patientData?.therapist_id) {
+          fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/therapist/patient/${patientData.id}`)
+            .then(res => res.json())
+            .then(data => setPatientTherapist(data))
+            .catch(() => setPatientTherapist(null));
+        } else {
+          setPatientTherapist(null);
+        }
+      })
+      .catch(() => {
+        setUser(null);
+        setPatient(null);
+        setPatientTherapist(null);
+      })
+      .finally(() => setLoading(false));
     }
   }, [userId]);
 
@@ -73,12 +83,35 @@ export default function UserScreen() {
     }
   }, [user]);
 
+  useEffect(() => {
+    setParentFirstname(patient?.parent_name || '');
+    setParentLastname(patient?.parent_lastname || '');
+    setPhone(patient?.phone || '');
+  }, [patient]);
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" color="#1a3cff" style={{ marginTop: 100 }} />
       </SafeAreaView>
     );
+  }
+
+  async function assignTherapist(therapistId: string) {
+    try {
+      const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}/therapist`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ therapist_id: therapistId }),
+      });
+      if (res.ok) {
+        Alert.alert('Succès', 'Thérapeute assigné !');
+      } else {
+        Alert.alert('Erreur', 'Impossible d\'assigner le thérapeute');
+      }
+    } catch (err) {
+      Alert.alert('Erreur', 'Erreur réseau');
+    }
   }
 
   if (!user) {
@@ -166,20 +199,20 @@ export default function UserScreen() {
                   />
                 </View>
                 <View style={styles.content}>
-                <TextInput style={styles.label}>Pays :</TextInput>
-                  <TextInput
-                    style={[
-                      styles.value,
-                      editMode && { color: '#b0b0b0' }
-                    ]}
-                    value={country}
-                    onChangeText={setCountry}
-                    editable={editMode}
-                    placeholder="Pays"
-                    autoCapitalize="words"
-                  />
+                  <TextInput style={styles.label}>Pays :</TextInput>
+                    <TextInput
+                      style={[
+                        styles.value,
+                        editMode && { color: '#b0b0b0' }
+                      ]}
+                      value={country}
+                      onChangeText={setCountry}
+                      editable={editMode}
+                      placeholder="Pays"
+                      autoCapitalize="words"
+                    />
                 </View>
-                <View style={styles.contentLast}>
+                <View style={styles.content}>
                   <TextInput style={styles.label}>Ville :</TextInput>
                   <TextInput
                     style={[
@@ -193,6 +226,48 @@ export default function UserScreen() {
                     autoCapitalize="words"
                   />
                 </View>
+                <View style={styles.content}>
+                  <TextInput style={styles.label}>Prénom du parent :</TextInput>
+                    <TextInput
+                      style={[
+                        styles.value,
+                        editMode && { color: '#b0b0b0' }
+                      ]}
+                      value={parentFirstname}
+                      onChangeText={setParentFirstname}
+                      editable={editMode}
+                      placeholder="Prénom du parent"
+                      autoCapitalize="words"
+                    />
+                </View>
+                <View style={styles.content}>
+                  <TextInput style={styles.label}>Nom du parent :</TextInput>
+                    <TextInput
+                      style={[
+                        styles.value,
+                        editMode && { color: '#b0b0b0' }
+                      ]}
+                      value={parentLastname}
+                      onChangeText={setParentLastname}
+                      editable={editMode}
+                      placeholder="Nom du parent"
+                      autoCapitalize="words"
+                    />
+                </View>
+                <View style={styles.contentLast}>
+                  <TextInput style={styles.label}>Téléphone :</TextInput>
+                    <TextInput
+                      style={[
+                        styles.value,
+                        editMode && { color: '#b0b0b0' }
+                      ]}
+                      value={phone}
+                      onChangeText={setPhone}
+                      editable={editMode}
+                      placeholder="Téléphone"
+                      keyboardType="numeric"
+                    />
+                </View>
                 <View style={{ alignItems: 'center', width: '100%', marginTop: 16 }}>
                   {!editMode ? (
                     <TouchableOpacity style={styles.button} onPress={() => setEditMode(true)}>
@@ -203,12 +278,17 @@ export default function UserScreen() {
                       style={styles.button}
                       onPress={async () => {
                         try {
-                          const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`, {
+                          const resUser = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ firstname, lastname, mail, country, city }),
                           });
-                          if (res.ok) {
+                          const resPatient = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ parent_firstname: parentFirstname, parent_lastname: parentLastname, phone: phone }),
+                          });
+                          if (resUser.ok && resPatient.ok) {
                             Alert.alert('Succès', 'Informations mises à jour !');
                             setEditMode(false);
                             // Optionnel : rafraîchir les infos utilisateur
@@ -268,47 +348,40 @@ export default function UserScreen() {
                     <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Sélectionner un thérapeute :</Text>
                   </View>
                   <View style={styles.tab}>
-                  {therapists.length === 0 ? (
-                    <Text>Aucun thérapeute disponible.</Text>
-                  ) : (
-                    therapists.map((therapist) => (
-                      <TouchableOpacity
-                        key={therapist.id}
-                        style={{
-                          padding: 10,
-                          backgroundColor: '#f5f5f5',
-                          borderRadius: 8,
-                          marginBottom: 8,
-                        }}
-                        onPress={async () => {
-                          // Appel API pour lier le patient à ce thérapeute
-                          try {
-                            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}/therapist`, {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ therapist_id: therapist.id }),
-                            });
-                            if (res.ok) {
-                              Alert.alert('Succès', 'Thérapeute assigné !');
-                              setPatient({ ...patient, therapist_id: therapist.id, therapist_name: therapist.name });
-                            } else {
-                              Alert.alert('Erreur', 'Impossible d\'assigner le thérapeute');
-                            }
-                          } catch (err) {
-                            Alert.alert('Erreur', 'Erreur réseau');
-                          }
-                        }}
-                      >
-                        <Text>{therapist.name}</Text>
-                      </TouchableOpacity>
-                    ))
-                  )}
+                    {therapists.length === 0 ? (
+                      <Text>Aucun thérapeute disponible.</Text>
+                    ) : (
+                      <>
+                        <SelectList
+                          setSelected={setSelectedTherapistId}
+                          data={therapists.map((t: any) => ({ key: t.id, value: t.name }))}
+                          placeholder="Sélectionner un thérapeute"
+                          search={true}
+                          boxStyles={{ marginBottom: 12, backgroundColor: '#f5f5f5', borderRadius: 8 }}
+                          dropdownStyles={{ backgroundColor: '#f5f5f5', borderRadius: 8 }}
+                        />
+                        <TouchableOpacity
+                          style={[styles.button, { opacity: selectedTherapistId ? 1 : 0.5 }]}
+                          disabled={!selectedTherapistId}
+                          onPress={() => assignTherapist(selectedTherapistId || '')}
+                        >
+                          <Text style={styles.buttonText}>Valider</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
                   </View>
                 </>
               ) : (
-                <Text>
-                  Thérapeute assigné : <Text style={{ fontWeight: 'bold' }}>{patient.therapist_name || 'ID ' + patient.therapist_id}</Text>
-                </Text>
+                <View style={styles.contentLast}>
+                  <TextInput style={styles.label}>Thérapeute :</TextInput>
+                  {patient.is_accepted === 1 ? (
+                    <Text style={styles.value}>
+                      {patientTherapist[0].name}
+                    </Text>
+                  ) : (
+                    <Text style={styles.value}>Thérapeute en attente de validation</Text>
+                  )}
+                </View>
               )}
             </>
           )}
@@ -373,7 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 16,
     alignItems: 'flex-start',
-    marginTop:60,
+    marginTop:20,
     marginBottom: 16,
     elevation: 4,
     shadowColor: '#000',
@@ -427,7 +500,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   label: {
-    width:'20%',
+    width:'25%',
     fontSize: 14,
     fontWeight: 'bold',
     color: '#302f2f',
@@ -438,7 +511,6 @@ const styles = StyleSheet.create({
     fontWeight: 'light',
     width:'80%',
     color: '#5558fd',
-    marginBottom: 4,
   },
   tabBar: {
     flexDirection: 'row',
@@ -490,4 +562,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-});
+})

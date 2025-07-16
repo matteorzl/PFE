@@ -230,7 +230,24 @@ async function getUserById(id) {
 }
 
 async function getAllUsers() {
-  const query = `SELECT * FROM users WHERE is_deleted IS NULL OR is_deleted = 0`;
+  const query = `
+  SELECT 
+    users.id,
+    users.firstname,
+    users.lastname,
+    users.mail,
+    users.country,
+    users.city,
+    users.role,
+    users.is_deleted,
+    therapist.is_validated,
+    patient.is_accepted,
+    patient.therapist_id
+  FROM users
+  LEFT JOIN therapist ON therapist.user_id = users.id
+  LEFT JOIN patient ON patient.user_id = users.id
+  WHERE users.is_deleted IS NULL OR users.is_deleted = 0
+`;
 
   try {
     const con = await createConnection();
@@ -361,6 +378,65 @@ async function getAllCategories() {
   }
 }
 
+async function updatePatient(id, parent_firstname, parent_lastname, phone) {
+  const query = `
+    UPDATE patient
+    SET parent_name = ?, parent_lastname = ?, phone = ?
+    WHERE id = ?
+  `;
+  const values = [parent_firstname, parent_lastname, phone, id];
+
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification du patient :", err);
+    throw err;
+  }
+}
+
+async function getPatientTherapist(id) {
+  const query = `
+    SELECT therapist_id, CONCAT(users.firstname, ' ', users.lastname) AS name
+    FROM patient
+    JOIN therapist ON therapist.id = patient.therapist_id
+    JOIN users ON users.id = therapist.user_id
+    WHERE patient.id = ?
+  `;
+
+  const values = [id];
+
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, values);
+    await con.end();
+    return rows;
+  }
+  catch (err) {
+    console.error("Erreur lors de la récupération des therapeutes :", err);
+    throw err;
+  }
+}
+
+async function updatePatientTherapist(id, therapist_id) {
+  const query = `
+    UPDATE patient
+    SET therapist_id = ?
+    WHERE id = ?
+  `;
+  const values = [therapist_id, id];
+  try {
+    const con = await createConnection();
+    await con.execute(query, values);
+    await con.end();
+  } catch (err) {
+    console.error("Erreur lors de la modification du patient :", err);
+    throw err;
+  }
+}
+
+
 async function getCardsByCategory(categoryId) {
   const query = `
     SELECT * FROM card
@@ -446,7 +522,7 @@ async function addCardsToCategory(categoryId, cardIds) {
 }
 
 async function getTherapistIdByUserId(userId) {
-  const query = `SELECT id FROM Therapist WHERE user_id = ?`;
+  const query = `SELECT * FROM therapist WHERE user_id = ?`;
   try {
     const con = await createConnection();
     const [rows] = await con.query(query, [userId]);
@@ -455,6 +531,22 @@ async function getTherapistIdByUserId(userId) {
   } catch (err) {
     throw err;
   }
+}
+
+async function validateTherapist(id, is_validated) {
+  const query = `UPDATE therapist SET is_validated = ? WHERE user_id = ?`;
+  const values = [is_validated, id];
+  const con = await createConnection();
+  await con.execute(query, values);
+  await con.end();
+}
+
+async function validatePatient(id, is_accepted) {
+  const query = `UPDATE patient SET is_accepted = ? WHERE user_id = ?`;
+  const values = [is_accepted, id];
+  const con = await createConnection();
+  await con.execute(query, values);
+  await con.end();
 }
 
 async function createUserPayment(payment){
@@ -718,7 +810,12 @@ module.exports = {
   getUserCategoryProgress,
   cardValidated,
   getPatientByUserId,
+  updatePatient,
+  updatePatientTherapist,
   getAllTherapists,
+  getPatientTherapist,
+  validateTherapist,
+  validatePatient,
 
   getAllCategories,
   getCardsNotInCategory,

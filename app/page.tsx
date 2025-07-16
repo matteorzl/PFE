@@ -41,24 +41,19 @@ export default function LoginPage() {
       // Après la connexion réussie
       if (response.ok) {
         const data = await response.json();
-        Cookies.set("token", data.token, { expires: 7 }); // Stocke le token
-        const { password, ...userWithoutPassword } = data;
-        let userToStore = { ...userWithoutPassword };
-        console.log("User data:", userWithoutPassword.user.role);
+        let userToStore = { ...data.user };
 
-        // Si le user est therapist, récupère son id de therapist
-        if (userWithoutPassword.user.role === "therapist") {
-          const therapistRes = await fetch(`http://localhost:3001/api/therapist-id/${userWithoutPassword.user.id}`);
+        if (userToStore.role === "therapist") {
+          const therapistRes = await fetch(`http://localhost:3001/api/therapist-id/${userToStore.id}`);
           if (therapistRes.ok) {
-            const { therapistId } = await therapistRes.json();
-            console.log("Therapist ID:", therapistId);
-            userToStore.therapistId = therapistId;
+            const therapistId = await therapistRes.json();
+            userToStore.therapistId = therapistId.therapist.id;
           }
         }
 
         // Enregistre toutes les données du user dans un seul cookie (objet JSON)
         Cookies.set("user", JSON.stringify(userToStore), { expires: 7 });
-
+        Cookies.set("token", data.token, { expires: 7 });
         router.push("/home");
       } else {
         const errorData = await response.json();

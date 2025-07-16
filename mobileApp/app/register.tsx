@@ -68,6 +68,7 @@ export default function RegisterScreen() {
           placeholderTextColor="#808080"
           value={firstname}
           onChangeText={setFirstname}
+          autoCapitalize="words"
         />
         <TextInput
           placeholder="Nom"
@@ -75,6 +76,7 @@ export default function RegisterScreen() {
           placeholderTextColor="#808080"
           value={lastname}
           onChangeText={setLastname}
+          autoCapitalize="words"
         />
         <TextInput
           placeholder="Adresse mail"
@@ -82,6 +84,7 @@ export default function RegisterScreen() {
           placeholderTextColor="#808080"
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none"
         />
         <TextInput
           placeholder="Mot de passe"
@@ -90,6 +93,7 @@ export default function RegisterScreen() {
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          autoCapitalize="none"
         />
         <TextInput
           placeholder="Pays"
@@ -97,6 +101,7 @@ export default function RegisterScreen() {
           placeholderTextColor="#808080"
           value={country}
           onChangeText={setCountry}
+          autoCapitalize="words"
         />
         <TextInput
           placeholder="Ville"
@@ -104,6 +109,7 @@ export default function RegisterScreen() {
           placeholderTextColor="#808080"
           value={city}
           onChangeText={setCity}
+          autoCapitalize="words"
         />
         <TouchableOpacity style={styles.loginButton} onPress={handleRegister}>
           <ThemedText style={styles.loginText}>S'inscrire</ThemedText>

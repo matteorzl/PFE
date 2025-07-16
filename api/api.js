@@ -10,7 +10,7 @@ const {
   loginUser,
   getUsersNumber,
   getUsersEvolution,
-  getAllUsers,
+  getAllUsers,  
   getUserById,
   updateUser,
   deleteUser,
@@ -19,6 +19,9 @@ const {
   getCategoriesOrderedForUser,
   /*patient*/
   getPatientByUserId,
+  updatePatient,
+  updatePatientTherapist,
+  validatePatient,
   getCardValidationStatusForUser,
   getCardsNotInCategory,
   addCardsToCategory,
@@ -41,8 +44,10 @@ const {
   updateCard,
   deleteCard,
   /*Therapist*/
+  validateTherapist,
   getAllTherapists,
   getTherapistIdByUserId,
+  getPatientTherapist,
 } = require('../db/db.query');
 
 const app = express(); 
@@ -268,6 +273,18 @@ app.get('/api/patient/:userId', async (req, res) => {
   }
 });
 
+app.patch('/api/patient/:id', async (req, res) => {
+  const { id } = req.params;
+  const { parent_firstname, parent_lastname, phone } = req.body;
+  try {
+    await updatePatient(id, parent_firstname, parent_lastname, phone);
+    res.status(200).json({ message: "Patient modifié avec succès !" });
+  } catch (err) {
+    console.error("Erreur lors de la modification du patient :", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/patient/:userId/category/:categoryId/card/:cardId/status', async (req, res) => {
   const { userId, cardId, categoryId } = req.params;
   try {
@@ -458,15 +475,50 @@ app.delete('/api/category/:id', async (req, res) => {
   }
 });
 
+app.patch('/api/patient/:id/therapist', async (req, res) => {
+  const { id } = req.params;
+  const { therapist_id } = req.body;
+  try {
+    await updatePatientTherapist(id, therapist_id);
+    res.status(200).json({ message: "Patient modifié avec succès !" });
+  } catch (err) {
+    console.error("Erreur lors de la modification du patient :", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch('/api/therapist/:id/validate', async (req, res) => {
+  const { id } = req.params;
+  const { is_validated } = req.body;
+  try {
+    await validateTherapist(id, is_validated);
+    res.status(200).json({ message: "Thérapeute validé avec succès !" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la validation du thérapeute." });
+  }
+});
+
 // Récupérer un medecin par son userid
 app.get('/api/therapist-id/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     const therapist = await getTherapistIdByUserId(userId);
+    console.log(therapist)
     if (!therapist) return res.status(404).json({ error: "Therapist not found" });
-    res.json({ therapistId: therapist.id });
+    res.json({ therapist});
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération du therapist" });
+  }
+});
+
+app.patch('/api/validate/patient/:id', async (req, res) => {
+  const { id } = req.params;
+  const { is_accepted } = req.body;
+  try {
+    await validatePatient(id, is_accepted);
+    res.status(200).json({ message: "Patient validé avec succès !" });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la validation du patient." });
   }
 });
 
@@ -613,5 +665,15 @@ app.get('/api/therapists', async (req, res) => {
     res.json(therapists);
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la récupération des therapeutes." });
+  }
+});
+
+app.get('/api/therapist/patient/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    let therapist = await getPatientTherapist(id);
+    res.json(therapist);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération du thérapeute." });
   }
 });
