@@ -7,38 +7,42 @@ const users = [
   {
     firstname: 'Alice',
     lastname: 'Moreau',
-    password: '$2b$10$4jwRZKnN9B5Dv2avhHftbeVSTk/Dp9YZKjdz3Mv1jPE/yrLZuKRzK',
+    password: '...',
     role: 'patient',
     mail: 'alice.moreau@email.com',
     country: 'France',
-    city: 'Nantes'
+    city: 'Nantes',
+    created_at: new Date('2024-07-01')
   },
   {
     firstname: 'Thomas',
     lastname: 'Leroy',
-    password: '$2b$10$6UkneROx.5fF3qQezDByROJ0zNj7vNDaUuI1EqQ56LrUaeVj5BBLO',
+    password: '...',
     role: 'therapist',
     mail: 'thomas.leroy@email.com',
     country: 'France',
-    city: 'Lille'
+    city: 'Lille',
+    created_at: new Date('2024-07-01')
   },
   {
     firstname: 'Claire',
     lastname: 'Fabre',
-    password: '$2b$10$e4Q9PD5LeHM2hWnZCEr50OTU9/22uSbNc7PMFFs8a8W2Z6TAmTT6K',
+    password: '...',
     role: 'patient',
     mail: 'claire.fabre@email.com',
     country: 'France',
-    city: 'Rennes'
+    city: 'Rennes',
+    created_at: new Date('2024-07-02')
   },
   {
     firstname: 'Hugo',
     lastname: 'Laurent',
-    password: '$2b$10$2f81EnqN3D1fwr/IRa7yVu0nKYK7VD6zJNRKBD30PFAodCz.QieVK',
+    password: '...',
     role: 'therapist',
     mail: 'hugo.laurent@email.com',
     country: 'France',
-    city: 'Nice'
+    city: 'Nice',
+    created_at: new Date('2024-07-03')
   }
 ];
 
@@ -175,9 +179,9 @@ async function main() {
   const userIds = [];
   for (const user of users) {
     const [result] = await conn.execute(
-      `INSERT INTO users (firstname, lastname, password, role, mail, country, city)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [user.firstname, user.lastname, user.password, user.role, user.mail, user.country, user.city]
+      `INSERT INTO users (firstname, lastname, password, role, mail, country, city, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [user.firstname, user.lastname, user.password, user.role, user.mail, user.country, user.city, user.created_at]
     );
     userIds.push(result.insertId);
   }

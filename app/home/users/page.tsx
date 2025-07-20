@@ -376,7 +376,8 @@ export default function UsersPage() {
               return (
                 <div className="flex gap-2">
                   <Button
-                    className="rounded-full bg-gray-300 hover:bg-gray-400 transition text-white"
+                    color="primary" 
+                    className="rounded-full"
                     title="En attente"
                     onClick={() => handleOpenValidateModal(user)}
                   >

@@ -30,6 +30,7 @@
     "@react-aria/ssr": "3.9.7",
     "@react-aria/visually-hidden": "3.8.18",
     "bcrypt": "^5.1.1",
+    "chart.js": "^4.5.0",
     "clsx": "2.1.1",
     "color-thief-browser": "^2.0.2",
     "cors": "^2.8.5",
@@ -43,9 +44,9 @@
     "next": "15.0.4",
     "next-themes": "^0.4.4",
     "react": "18.3.1",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "18.3.1",
-    "stripe": "^18.3.0",
-    "victory": "^37.3.6"
+    "stripe": "^18.3.0"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "15.0.4",

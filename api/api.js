@@ -5,6 +5,10 @@ const upload = multer();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { 
+  /* Dashboard */
+  getCompletedSeriesCount,
+  getTotalExercisesDone,
+
   /*user*/
   createUser,
   loginUser,
@@ -63,7 +67,7 @@ app.listen(3001, () => {
   console.log("API d'enregistrement en cours d'exécution sur le port 3001");
 });
 
-const SECRET = 'votre_secret_ultra_complexe'; // Mets ça dans un .env en prod !
+const SECRET = 'votre_secret_ultra_complexe';
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -76,6 +80,19 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+app.get('/api/dashboard/stats', async (req, res) => {
+  try {
+    const completedSeries = await getCompletedSeriesCount();
+    const totalExercises = await getTotalExercisesDone();
+    res.json({
+      completedSeries,
+      totalExercises
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération des stats" });
+  }
+});
 
 app.post('/api/payment-sheet', async (req, res) => {
   try {

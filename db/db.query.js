@@ -1,6 +1,43 @@
 const bcrypt = require('bcrypt');
 const createConnection = require('./db.connect');
 
+// Nombre de séries complétées à 100%
+async function getCompletedSeriesCount() {
+  const query = `
+    SELECT COUNT(*) AS completed_series_count
+    FROM (
+      SELECT pc.patient_id, pc.category_id
+      FROM patient_category pc
+      JOIN (
+        SELECT category_id, COUNT(*) AS total_cards
+        FROM card_category
+        GROUP BY category_id
+      ) cc ON cc.category_id = pc.category_id
+      JOIN (
+        SELECT patient_id, category_id, COUNT(*) AS validated_cards
+        FROM patient_card
+        WHERE is_validated = 1
+        GROUP BY patient_id, category_id
+      ) pcv ON pcv.patient_id = pc.patient_id AND pcv.category_id = pc.category_id
+      WHERE pcv.validated_cards = cc.total_cards
+      GROUP BY pc.patient_id, pc.category_id
+    ) AS completed_series;
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query);
+  await con.end();
+  return rows[0]?.completed_series_count || 0;
+}
+
+// Nombre total d'exercices réalisés
+async function getTotalExercisesDone() {
+  const query = `SELECT COUNT(*) AS total_exercises FROM patient_card WHERE is_validated = 1`;
+  const con = await createConnection();
+  const [rows] = await con.query(query);
+  await con.end();
+  return rows[0]?.total_exercises || 0;
+}
+
 // Fonction pour créer un utilisateur
 async function createUser(user) {
   const { firstname, lastname, email, password, country, city, role } = user;
@@ -794,6 +831,9 @@ async function deleteCard(cardId) {
 }
 
 module.exports = {
+  getCompletedSeriesCount,
+  getTotalExercisesDone,
+
   createUser,
   updateUser,
   deleteUser,

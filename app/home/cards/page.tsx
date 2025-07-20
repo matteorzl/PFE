@@ -8,6 +8,7 @@ import CreateModal from "@/components/card/CreateModal";
 import { EditModal } from "@/components/card/EditModal";
 import { DeleteModal } from "@/components/card/DeleteModal";
 import { CustomAudioPlayer } from "@/components/CustomAudioPlayer";
+import Cookies from "js-cookie";
 
 interface CardItem {
   id: number;
@@ -134,6 +135,7 @@ export default function CardsPage() {
   const [tabsState, setTabsState] = useState<{ [cardId: number]: "image" | "gif" }>({});
   const [cardGradients, setCardGradients] = useState<{ [cardId: number]: string }>({});
   const [cardLightColors, setCardLightColors] = useState<{ [cardId: number]: string }>({});
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const router = useRouter();
 
   const fetchCards = async () => {
@@ -179,6 +181,18 @@ export default function CardsPage() {
   }, []);
 
   useEffect(() => {
+    const userCookie = Cookies.get("user");
+    
+    if (userCookie) {
+      try {
+        setCurrentUser(JSON.parse(userCookie));
+      } catch {
+        setCurrentUser(null);
+      }
+    } else {
+      setCurrentUser(null);
+    }
+      
     let filtered = [...cards];
 
     if (searchValue) {
@@ -521,7 +535,7 @@ export default function CardsPage() {
                           />
                         </div>
                         <div className="flex items-center justify-center gap-4 mt-2 min-h-[44px]">
-                          {(card.is_validated === 0 || card.is_validated === null) ? (
+                          {currentUser?.role === "admin" && (card.is_validated === 0 || card.is_validated === null) && (
                             <>
                               <Button
                                 title="Valider"
@@ -544,7 +558,7 @@ export default function CardsPage() {
                                 <RefuseIcon />
                               </Button>
                             </>
-                          ) : null}
+                          )}
                         </div>
                       </div>
                     </div>
