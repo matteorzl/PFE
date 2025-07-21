@@ -379,7 +379,32 @@ export default function UserScreen() {
                       {patientTherapist[0].name}
                     </Text>
                   ) : (
-                    <Text style={styles.value}>Thérapeute en attente de validation</Text>
+                    <View style={{ alignItems: 'flex-start', width: '80%', marginTop: 16 }}>
+                      <Text style={[styles.value, {marginTop:8}]}>En attente de validation</Text>
+                      <TouchableOpacity
+                        style={[styles.button, {marginTop:8, backgroundColor:'#ff4d4d'}]}
+                        onPress={async () => {
+                          try {
+                            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}/therapist`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ therapist_id: null }),
+                            });
+                            if (res.ok) {
+                              Alert.alert('Succès', 'Demande annulée.');
+                              setPatient({ ...patient, therapist_id: null });
+                              setPatientTherapist(null);
+                            } else {
+                              Alert.alert('Erreur', 'Impossible d\'annuler la demande');
+                            }
+                          } catch (err) {
+                            Alert.alert('Erreur', 'Erreur réseau');
+                          }
+                        }}
+                      >
+                        <Text style={styles.buttonText}>Annuler la demande</Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               )}
