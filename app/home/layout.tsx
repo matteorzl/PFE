@@ -12,11 +12,28 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const token = Cookies.get("token");
-    if (!token) {
+    const userCookie = Cookies.get("user");
+    if (!userCookie) {
       router.replace("/");
-    } else {
-      setIsChecking(false);
+      return;
     }
+    try {
+      const user = JSON.parse(userCookie);
+      if (user.role === "patient") {
+        Cookies.remove("token");
+        router.replace("/");
+        return;
+      }
+      if (!token) {
+        router.replace("/");
+        return;
+      }
+    } catch {
+      Cookies.remove("token");
+      router.replace("/");
+      return;
+    }
+    setIsChecking(false);
   }, [router]);
 
   if (isChecking) {

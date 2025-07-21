@@ -20,6 +20,7 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { CreateModal } from "@/components/user/CreateModal";
 import { EditModal } from "@/components/user/EditModal";
 import { DeleteModal } from "@/components/user/DeleteModal";
 import { OrderCategoriesUserModal } from "@/components/user/OrderCategoriesUserModal";
@@ -245,6 +246,7 @@ export default function UsersPage() {
   const [rows, setRows] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isValidateModalOpen, setIsValidateModalOpen] = useState(false);
@@ -571,14 +573,16 @@ export default function UsersPage() {
               ))}
             </DropdownMenu>
           </Dropdown>
-          <Button
-            color="primary" 
-            endContent={<PlusIcon />}
-            size="sm"
-            onPress={() => router.push('/home/users/create')}
-          >
-            Ajouter un utilisateur
-          </Button>
+          {currentUser?.role !== "therapist" && (
+            <Button
+              color="primary" 
+              endContent={<PlusIcon />}
+              size="sm"
+              onPress={() => setIsCreateModalOpen(true)}
+            >
+              Ajouter un utilisateur
+            </Button>
+          )}
         </div>
       </div>
     </div>
@@ -625,6 +629,11 @@ export default function UsersPage() {
           )}
         </TableBody>
       </Table>
+      <CreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={fetchUsers}
+      />
       <EditModal
         isOpen={isEditModalOpen}
         onClose={() => {
