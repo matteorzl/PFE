@@ -469,7 +469,8 @@ export default function UsersPage() {
                 <Button
                   isIconOnly
                   size="sm"
-                  variant="light"
+                  variant="solid"
+                  color="primary"
                   aria-label="Valider"
                   onPress={() => handleOpenValidateModal(user)}
                 >

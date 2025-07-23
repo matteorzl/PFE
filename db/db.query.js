@@ -246,6 +246,18 @@ async function getPatientByUserId(userId) {
   }
 }
 
+async function getPatientById(id) {
+  const query = `SELECT * FROM patient WHERE id = ?`;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [id]);
+    await con.end();
+    return rows[0];
+  } catch (err) {
+    throw err;
+  }
+}
+
 // Vérifier si un utilisateur est premium
 async function isPremium(id) {
   const query = `
@@ -496,18 +508,23 @@ async function getPatientTherapist(id) {
 
 // Mettre à jour le thérapeute d'un patient
 async function updatePatientTherapist(id, therapist_id) {
-  const query = `
-    UPDATE patient
-    SET therapist_id = ?
-    WHERE id = ?
-  `;
-  const values = [therapist_id, id];
+  const con = await createConnection();
   try {
-    const con = await createConnection();
-    await con.execute(query, values);
+    const [patients] = await con.query('SELECT affiliation_count, is_accepted FROM patient WHERE id = ?', [id]);
+    let newAffiliationCount = 0;
+    if (patients.length === 0) throw new Error('Patient non trouvé');
+    const patient = patients[0];
+    if (therapist_id) {
+      newAffiliationCount = (patient.affiliation_count || 0) + 1;
+      await con.execute('UPDATE patient SET therapist_id = ?, affiliation_count = ? WHERE id = ?', [therapist_id, newAffiliationCount, id]);
+    } else {
+      await con.execute('UPDATE patient SET therapist_id = NULL WHERE id = ?', [id]);
+      newAffiliationCount = patient.affiliation_count || 0;
+    }
     await con.end();
+    return newAffiliationCount;
   } catch (err) {
-    console.error("Erreur lors de la modification du patient :", err);
+    await con.end();
     throw err;
   }
 }
@@ -626,6 +643,9 @@ async function validateTherapist(id, is_validated) {
 // Valider un patient
 async function validatePatient(id, is_accepted) {
   const query = `UPDATE patient SET is_accepted = ? WHERE user_id = ?`;
+  if(is_accepted === 1 ){
+   query = `UPDATE patient SET is_accepted = ?, affiliation_count = 0 WHERE user_id = ?`;
+  }
   const values = [is_accepted, id];
   const con = await createConnection();
   await con.execute(query, values);
@@ -949,6 +969,20 @@ async function updateCategoriesOrder(orderArray) {
   }
 }
 
+// Ajout utilitaire pour récupérer les infos du thérapeute (mail, prénom, nom) à partir de son id
+async function getTherapistUserInfos(therapistId) {
+  const query = `
+    SELECT users.mail, users.firstname, users.lastname
+    FROM therapist
+    JOIN users ON users.id = therapist.user_id
+    WHERE therapist.id = ?
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [therapistId]);
+  await con.end();
+  return rows[0] || null;
+}
+
 module.exports = {
   getCompletedSeriesCount,
   getTotalExercisesDone,
@@ -969,6 +1003,7 @@ module.exports = {
   getUserCategoryProgress,
   cardValidated,
   getPatientByUserId,
+  getPatientById,
   updatePatient,
   updatePatientTherapist,
   getAllTherapists,
@@ -1000,5 +1035,6 @@ module.exports = {
   updateUserPassword,
   clearResetToken,
   updateCardsOrderInCategory,
+  getTherapistUserInfos,
   updateCategoriesOrder
 };

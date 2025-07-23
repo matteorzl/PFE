@@ -18,9 +18,9 @@ export default function RegisterPage() {
       lastname: formData.lastname as string,
       email: formData.email as string,
       password: formData.password as string,
-      country: formData.country as string || "",
-      city: formData.city as string || "",
-      role : 'therapist',
+      country: (formData.country as string) || "",
+      city: (formData.city as string) || "",
+      role: "therapist",
       professional_number: formData.professional_number as string,
       indentification_type: formData.indentification_type as string,
     };
@@ -50,31 +50,33 @@ export default function RegisterPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex flex-col space-between justify-center bg-gray-50 min-h-screen relative">
-      <div className="absolute top-8 flex flex-col items-center w-full">
+        <div className="absolute top-8 flex flex-col items-center w-full">
           <Logo size={120} />
           <h1 className="text-2xl font-bold text-center">SoundSwipes</h1>
-      </div>
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
+        </div>
+        <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
           <h1 className="text-2xl font-bold text-center">Inscription</h1>
           <Form
             className="mt-6 w-full max-w-s flex flex-col gap-4"
             validationBehavior="native"
             onSubmit={handleRegister}
           >
-            <Input
-              isRequired
-              label="Prénom"
-              name="firstname"
-              placeholder="Entrez votre prénom"
-              type="text"
-            />
-            <Input
-              isRequired
-              label="Nom"
-              name="lastname"
-              placeholder="Entrez votre nom"
-              type="text"
-            />
+            <div className="flex flex-row gap-4">
+              <Input
+                isRequired
+                label="Prénom"
+                name="firstname"
+                placeholder="Entrez votre prénom"
+                type="text"
+              />
+              <Input
+                isRequired
+                label="Nom"
+                name="lastname"
+                placeholder="Entrez votre nom"
+                type="text"
+              />
+            </div>
             <Input
               isRequired
               label="Adresse mail"
@@ -89,18 +91,20 @@ export default function RegisterPage() {
               placeholder="Entrez votre mot de passe"
               type="password"
             />
-            <Input
-              label="Pays"
-              name="country"
-              placeholder="Entrez votre pays (optionnel)"
-              type="text"
-            />
-            <Input
-              label="Ville"
-              name="city"
-              placeholder="Entrez votre ville (optionnel)"
-              type="text"
-            />
+            <div className="flex flex-row gap-4">
+              <Input
+                label="Pays"
+                name="country"
+                placeholder="Entrez votre pays"
+                type="text"
+              />
+              <Input
+                label="Ville"
+                name="city"
+                placeholder="Entrez votre ville"
+                type="text"
+              />
+            </div>
             <Input
               isRequired
               label="Numéro professionnel"
@@ -109,7 +113,9 @@ export default function RegisterPage() {
               type="text"
             />
             <div>
-              <label className="block font-medium mb-2">Type d’identification</label>
+              <label className="block font-medium mb-2">
+                Type d’identification
+              </label>
               <div className="flex gap-4">
                 <label>
                   <input
@@ -117,7 +123,8 @@ export default function RegisterPage() {
                     name="indentification_type"
                     value="ADELI"
                     required
-                  /> ADELI
+                  />{" "}
+                  ADELI
                 </label>
                 <label>
                   <input
@@ -125,12 +132,13 @@ export default function RegisterPage() {
                     name="indentification_type"
                     value="RPPS"
                     required
-                  /> RPPS
+                  />{" "}
+                  RPPS
                 </label>
               </div>
             </div>
             <Button className="w-full" color="primary" type="submit">
-                Créer son compte
+              Créer son compte
             </Button>
             {action && (
               <div className="text-small text-default-500">
@@ -140,7 +148,7 @@ export default function RegisterPage() {
           </Form>
           <div className="text-center mt-6">
             <a href="/" className="text-sm underline text-blue-600">
-                Vous avez déjà un compte ?
+              Vous avez déjà un compte ?
             </a>
           </div>
         </div>
