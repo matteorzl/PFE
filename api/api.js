@@ -678,9 +678,263 @@ app.patch('/api/therapist/:id/validate', async (req, res) => {
   const { is_validated } = req.body;
   try {
     await validateTherapist(id, is_validated);
+
+    // Récupère l'utilisateur concerné
+    const con = await require('../db/db.connect')();
+    const [[therapist]] = await con.query(
+      `SELECT users.mail, users.firstname, users.lastname 
+       FROM therapist 
+       JOIN users ON users.id = therapist.user_id 
+       WHERE therapist.user_id = ?`, [id]
+    );
+    await con.end();
+
+    if (therapist && therapist.mail) {
+      let subject, html;
+      if (is_validated === 1) {
+        subject = "Votre compte SoundSwipes a été validé";
+        html = `
+          <!DOCTYPE html>
+          <html lang="fr">
+            <head>
+              <meta charset="UTF-8" />
+              <title>Réinitialisation de mot de passe - SoundSwipes</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+              <style>
+                body {
+                  background: #f4f6fa;
+                  font-family: 'Segoe UI', Arial, sans-serif;
+                  margin: 0;
+                  padding: 0;
+                }
+                .container {
+                  max-width: 420px;
+                  margin: 40px auto;
+                  background: #fff;
+                  border-radius: 18px;
+                  box-shadow: 0 2px 12px rgba(37,99,235,0.07);
+                  padding: 32px 24px 24px 24px;
+                  text-align: center;
+                }
+                .logo {
+                  width: 80px;
+                  margin-bottom: 16px;
+                }
+                .title {
+                  color: #2563eb;
+                  font-size: 1.5rem;
+                  font-weight: bold;
+                  margin-bottom: 8px;
+                }
+                .subtitle {
+                  color: #22223b;
+                  font-size: 1.1rem;
+                  margin-bottom: 24px;
+                }
+                .btn {
+                  display: inline-block;
+                  background: #2563eb;
+                  color: #fff !important;
+                  text-decoration: none;
+                  padding: 14px 32px;
+                  border-radius: 999px;
+                  font-weight: 600;
+                  font-size: 1rem;
+                  margin: 24px 0 16px 0;
+                  transition: background 0.2s;
+                }
+                .btn:hover {
+                  background: #1d4ed8;
+                }
+                .info {
+                  color: #6b7280;
+                  font-size: 0.95rem;
+                  margin-top: 18px;
+                }
+                .footer {
+                  color: #a0aec0;
+                  font-size: 0.85rem;
+                  margin-top: 32px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="title">Compte validé ✅</div>
+                <div class="subtitle">
+                  Bonjour ${therapist.firstname},<br>
+                  Votre compte orthophoniste a été <b>validé</b> par un administrateur.<br>
+                  Vous pouvez maintenant vous connecter à SoundSwipes.
+                </div>
+                <div class="info">
+                <a href="http://localhost:3000/" class="btn">Se connecter</a>
+                  <div>
+                    Merci de votre confiance.<br>L'équipe SoundSwipes.
+                  </div>
+                </div>
+                <div class="footer">
+                  &copy; 2025 SoundSwipes
+                  <a href="http://localhost:3000/" style="color:#2563eb;text-decoration:none;">soundswipes.fr</a>
+                </div>
+              </div>
+            </body>
+          </html>`;
+      } else if (is_validated === 2) {
+        const editToken = jwt.sign(
+          { id, type: "edit-therapist" },
+          SECRET,
+          { expiresIn: "1h" }
+        );
+
+        subject = "Votre compte SoundSwipes a été refusé";
+        html =
+        `
+          <!DOCTYPE html>
+          <html lang="fr">
+            <head>
+              <meta charset="UTF-8" />
+              <title>Réinitialisation de mot de passe - SoundSwipes</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+              <style>
+                body {
+                  background: #f4f6fa;
+                  font-family: 'Segoe UI', Arial, sans-serif;
+                  margin: 0;
+                  padding: 0;
+                }
+                .container {
+                  max-width: 420px;
+                  margin: 40px auto;
+                  background: #fff;
+                  border-radius: 18px;
+                  box-shadow: 0 2px 12px rgba(37,99,235,0.07);
+                  padding: 32px 24px 24px 24px;
+                  text-align: center;
+                }
+                .logo {
+                  width: 80px;
+                  margin-bottom: 16px;
+                }
+                .title {
+                  color: #2563eb;
+                  font-size: 1.5rem;
+                  font-weight: bold;
+                  margin-bottom: 8px;
+                }
+                .subtitle {
+                  color: #22223b;
+                  font-size: 1.1rem;
+                  margin-bottom: 24px;
+                }
+                .btn {
+                  display: inline-block;
+                  background: #2563eb;
+                  color: #fff !important;
+                  text-decoration: none;
+                  padding: 14px 32px;
+                  border-radius: 999px;
+                  font-weight: 600;
+                  font-size: 1rem;
+                  margin: 24px 0 16px 0;
+                  transition: background 0.2s;
+                }
+                .btn:hover {
+                  background: #1d4ed8;
+                }
+                .info {
+                  color: #6b7280;
+                  font-size: 0.95rem;
+                  margin-top: 18px;
+                }
+                .footer {
+                  color: #a0aec0;
+                  font-size: 0.85rem;
+                  margin-top: 32px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="title">Compte refusé ❌</div>
+                <div class="subtitle">
+                  Bonjour ${therapist.firstname},<br>
+                  Votre compte orthophoniste a été <b>refusé</b> par un administrateur.<br>
+                  Vous pouvez modifier vos informations afin qu'un administrateur vous valide.
+                  Pour plus d'informations, contactez le support SoundSwipes.
+                </div>
+                <div class="info">
+                  <a href="http://localhost:3000/therapist/edit?token=${editToken}" class="btn">Modifier vos informations</a>
+                  <div>
+                    Merci de votre compréhension.<br>L'équipe SoundSwipes.
+                  </div>
+                </div>
+                <div class="footer">
+                  &copy; 2025 SoundSwipes
+                  <a href="http://localhost:3000/" style="color:#2563eb;text-decoration:none;">soundswipes.fr</a>
+                </div>
+              </div>
+            </body>
+          </html>`;
+      }
+
+      if (subject && html) {
+        await mailjetClient
+          .post("send", { version: "v3.1" })
+          .request({
+            Messages: [
+              {
+                From: {
+                  Email: process.env.MAILJET_FROM_EMAIL,
+                  Name: process.env.MAILJET_FROM_NAME,
+                },
+                To: [{ Email: therapist.mail }],
+                Subject: subject,
+                HTMLPart: html,
+              },
+            ],
+          });
+      }
+    }
+
     res.status(200).json({ message: "Thérapeute validé avec succès !" });
   } catch (err) {
     res.status(500).json({ error: "Erreur lors de la validation du thérapeute." });
+  }
+});
+
+// Génération d'un token pour la modification des informations d'un orthophoniste
+app.post('/api/therapist/edit-by-token', async (req, res) => {
+  const { token } = req.body;
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    if (decoded.type !== "edit-therapist") return res.status(403).json({ error: "Token invalide" });
+    const userId = decoded.id;
+    // Récupère les infos user et therapist
+    const user = await getUserById(userId);
+    const therapist = await getTherapistIdByUserId(userId);
+    res.json({ user, therapist });
+  } catch (err) {
+    res.status(400).json({ error: "Token invalide ou expiré" });
+  }
+});
+
+// Modifier un thérapeute
+app.patch('/api/therapist/:id/edit', async (req, res) => {
+  const { id } = req.params;
+  const { professional_number, indentification_type, city, country } = req.body;
+  try {
+    // Met à jour les infos et remet is_validated à null
+    const con = await require('../db/db.connect')();
+    await con.query(
+      `UPDATE therapist 
+      SET professional_number = ?, indentification_type = ?, is_validated = NULL 
+      WHERE user_id = ?`,
+      [professional_number, indentification_type, id]
+    );
+    await con.end();
+    res.status(200).json({ message: "Profil thérapeute modifié et demande renvoyée." });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la modification du thérapeute." });
   }
 });
 

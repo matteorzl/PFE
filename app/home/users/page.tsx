@@ -201,16 +201,43 @@ export const EditIcon = (props: any) => {
   );
 };
 
+export const CheckIcon = ({size, height, width, ...props}) => {
+  return (
+    <svg
+      fill="none"
+      height={size || height || 24}
+      viewBox="0 0 24 24"
+      width={size || width || 24}
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM16.78 9.7L11.11 15.37C10.97 15.51 10.78 15.59 10.58 15.59C10.38 15.59 10.19 15.51 10.05 15.37L7.22 12.54C6.93 12.25 6.93 11.77 7.22 11.48C7.51 11.19 7.99 11.19 8.28 11.48L10.58 13.78L15.72 8.64C16.01 8.35 16.49 8.35 16.78 8.64C17.07 8.93 17.07 9.4 16.78 9.7Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};
+
+export const Open = ({size, height, width, ...props}) => {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-5 text-white">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 19.5 15-15m0 0H8.25m11.25 0v11.25" />
+    </svg>
+  );
+};
+
+
 const statusColorMap = {
-  admin: "success",
-  patient: "secondary",
+  admin: "danger",
+  patient: "primary",
   therapist: "warning",
 };
 
 const statusOptions = [
   { name: "Admin", uid: "admin" },
   { name: "Patient", uid: "patient" },
-  { name: "Therapist", uid: "therapist" },
+  { name: "Orthophoniste", uid: "therapist" },
 ];
 
 const columns = [
@@ -373,45 +400,107 @@ export default function UsersPage() {
         );
       case "validation":
         if (user.role === "therapist") {
-            const isValidated = user.is_validated;
-            if (isValidated === null) {
-              return (
-                <div className="flex gap-2">
-                  <Button
-                    color="primary" 
-                    className="rounded-full"
-                    title="En attente"
-                    onClick={() => handleOpenValidateModal(user)}
-                  >
-                    En attente
-                  </Button>
-                </div>
-              );
-            } else if (isValidated === 1) {
-              return <span className="text-green-600">Validé</span>;
-            } else if (isValidated === 2) {
-              return <span className="text-red-600">Refusé</span>;
-            }
+          const isValidated = user.is_validated;
+          if (isValidated === null) {
+            return (
+              <div className="flex items-center gap-2">
+                <Chip
+                  color="warning"
+                  startContent={<div>⌛</div>}
+                  variant="flat"
+                  size="sm"
+                  className="capitalize"
+                >
+                  En attente
+                </Chip>
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="solid"
+                  color="primary"
+                  aria-label="Valider"
+                  onPress={() => handleOpenValidateModal(user)}
+                >
+                  <Open />
+                </Button>
+              </div>
+            );
+          } else if (isValidated === 1) {
+            return (
+              <Chip
+                color="success"
+                startContent={<CheckIcon size={18} />}
+                variant="flat"
+                size="sm"
+                className="capitalize"
+              >
+                Validé
+              </Chip>
+            );
+          } else if (isValidated === 2) {
+            return (
+              <Chip
+                color="danger"
+              startContent={<div>❌</div>}
+                variant="flat"
+                size="sm"
+                className="capitalize"
+              >
+                Refusé
+              </Chip>
+            );
+          }
         }
         // Validation des patients par le thérapeute
         if (user.role === "patient" && currentUser?.role === "therapist") {
           const isAccepted = user.is_accepted;
           if (isAccepted === null) {
             return (
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                <Chip
+                  color="warning"
+                  startContent={<div>⌛</div>}
+                  variant="flat"
+                  size="sm"
+                  className="capitalize"
+                >
+                  En attente
+                </Chip>
                 <Button
-                    className="rounded-full bg-gray-300 hover:bg-gray-400 transition text-white"
-                    title="En attente"
-                    onClick={() => handleOpenValidateModal(user)}
-                  >
-                    En attente
-                  </Button>
+                  isIconOnly
+                  size="sm"
+                  variant="light"
+                  aria-label="Valider"
+                  onPress={() => handleOpenValidateModal(user)}
+                >
+                  <Open />
+                </Button>
               </div>
             );
           } else if (isAccepted === 1) {
-            return <span className="text-green-600">Validé</span>;
+            return (
+              <Chip
+                color="success"
+                startContent={<CheckIcon size={18} />}
+                variant="flat"
+                size="sm"
+                className="capitalize"
+              >
+                Validé
+              </Chip>
+            );
           } else if (isAccepted === 2) {
-            return <span className="text-red-600">Refusé</span>;
+            return (
+              <Chip
+                color="danger"
+                startContent={<div>❌</div>}
+                variant="flat"
+                size="sm"
+                className="capitalize"
+              >
+                Refusé
+              </Chip>
+            );
           }
         }
         return null;
@@ -604,7 +693,7 @@ export default function UsersPage() {
         aria-label="Liste des utilisateurs"
         isHeaderSticky
         removeWrapper
-        className="max-h-[600px] overflow-auto"
+        className="max-h overflow-auto"
         topContent={topContent}
         topContentPlacement="outside"
       >

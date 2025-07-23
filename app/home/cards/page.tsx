@@ -345,8 +345,8 @@ export default function CardsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 gap-4">
         {loading
-          ? Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-[180px] w-full rounded-xl" />
+          ? Array.from({ length: 20 }).map((_, i) => (
+              <Skeleton key={i} className="h-[220px] w-full rounded-xl" />
             ))
           : filteredCards.map((card) => {
             const lightColor = cardLightColors[card.id] || "#eee";
