@@ -1,5 +1,5 @@
 version: 2
-authtoken: 30HFeRi0PzOrgwtRUih2hui0qVr_4VuBUuJ54Ut5jyeteLWzC
+authtoken: %TOKEN%
 
 tunnels:
   front:
