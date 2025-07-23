@@ -82,6 +82,7 @@ export default function CategoryCardsPage() {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [orderChanged, setOrderChanged] = useState(false); // Ajout état pour le bouton
   const searchParams = useSearchParams();
   const params = useParams();
   const categoryName = searchParams.get('name');
@@ -114,22 +115,39 @@ export default function CategoryCardsPage() {
     fetchCards();
   }, [categoryId]);
 
-const handleDragEnd = (event: DragEndEvent) => {
-  const { active, over } = event;
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
 
-  if (over && active.id !== over.id) {
-    setCards((items) => {
-      const oldIndex = items.findIndex((item) => item.id === active.id);
-      const newIndex = items.findIndex((item) => item.id === over.id);
-      const newItems = arrayMove(items, oldIndex, newIndex);
+    if (over && active.id !== over.id) {
+      setCards((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
 
-      return newItems.map((item, index) => ({
-        ...item,
-        order_list: index + 1
-      }));
-    });
-  }
-};
+        setOrderChanged(true); // Active le bouton
+
+        return newItems.map((item, index) => ({
+          ...item,
+          order_list: index + 1
+        }));
+      });
+    }
+  };
+
+  // Fonction pour sauvegarder l'ordre
+  const handleSaveOrder = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/categories/${categoryId}/cards/order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: cards.map(card => ({ id: card.id, order_list: card.order_list })) }),
+      });
+      if (!response.ok) throw new Error("Erreur lors de la sauvegarde de l'ordre");
+      setOrderChanged(false);
+    } catch (error) {
+      alert("Erreur lors de la sauvegarde de l'ordre");
+    }
+  };
 
   if (loading) {
     return (
@@ -148,9 +166,16 @@ const handleDragEnd = (event: DragEndEvent) => {
       </Breadcrumbs>
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Cartes</h1>
-        <Button color="primary" endContent={<PlusIcon />} onPress={() => setAddModalOpen(true)}>
-          Ajouter des cartes
-        </Button>
+        <div className="flex gap-2">
+          <Button color="primary" endContent={<PlusIcon />} onPress={() => setAddModalOpen(true)}>
+            Ajouter des cartes
+          </Button>
+          {orderChanged && (
+            <Button color="success" className="text-white" onPress={handleSaveOrder}>
+              Enregistrer l'ordre
+            </Button>
+          )}
+        </div>
       </div>
       <AddCardsToCategoryModal
         isOpen={addModalOpen}

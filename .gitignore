@@ -38,3 +38,4 @@ db\db.config.js
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+ngrok.yml
