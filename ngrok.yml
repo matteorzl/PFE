@@ -1,0 +1,15 @@
+version: 2
+authtoken: 30HFeRi0PzOrgwtRUih2hui0qVr_4VuBUuJ54Ut5jyeteLWzC
+
+tunnels:
+  front:
+    addr: 3000
+    proto: http
+
+  api:
+    addr: 3001
+    proto: http
+
+  db:
+    addr: 3006
+    proto: tcp

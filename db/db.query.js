@@ -909,6 +909,22 @@ async function clearResetToken(userId) {
   await con.end();
 }
 
+// Met à jour l'ordre des cartes dans une catégorie
+async function updateCardsOrderInCategory(categoryId, orderArray) {
+  // orderArray: [{id, order_list}]
+  const con = await createConnection();
+  try {
+    for (const { id, order_list } of orderArray) {
+      await con.query(
+        'UPDATE card SET order_list = ? WHERE id = ? AND id IN (SELECT card_id FROM card_category WHERE category_id = ?)',
+        [order_list, id, categoryId]
+      );
+    }
+  } finally {
+    await con.end();
+  }
+}
+
 module.exports = {
   getCompletedSeriesCount,
   getTotalExercisesDone,
@@ -958,5 +974,6 @@ module.exports = {
   saveResetToken,
   getUserByResetToken,
   updateUserPassword,
-  clearResetToken
+  clearResetToken,
+  updateCardsOrderInCategory
 };
