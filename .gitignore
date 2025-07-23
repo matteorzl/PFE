@@ -29,6 +29,8 @@ yarn-error.log*
 # local env files
 .env*.local
 
+ngrol.yml
+
 #db
 db\db.config.js
 
