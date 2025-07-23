@@ -323,7 +323,6 @@ async function getAllUsers() {
 async function getCategoriesOrderedForUser(userId) {
   const con = await createConnection();
 
-  // 1. Trouver le patient.id à partir du userId
   const [patients] = await con.query(
     `SELECT id FROM patient WHERE user_id = ?`,
     [userId]
@@ -334,16 +333,27 @@ async function getCategoriesOrderedForUser(userId) {
   }
   const patientId = patients[0].id;
 
-  // 2. Récupérer les catégories associées à ce patient
-  const [rows] = await con.query(
-    `SELECT c.* FROM category c
-     JOIN patient_category pc ON pc.category_id = c.id
-     WHERE pc.patient_id = ?
-     ORDER BY c.order_list ASC, c.name ASC`,
+  const [allCategories] = await con.query(
+    `SELECT * FROM category`
+  );
+
+  const [customOrder] = await con.query(
+    `SELECT category_id, order_list FROM patient_category WHERE patient_id = ?`,
     [patientId]
   );
+
+  const categoriesWithOrder = allCategories.map(cat => {
+    const custom = customOrder.find(c => c.category_id === cat.id);
+    return {
+      ...cat,
+      order: custom ? custom.order_list : cat.order_list
+    };
+  });
+
+  categoriesWithOrder.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+
   await con.end();
-  return rows;
+  return categoriesWithOrder;
 }
 
 // Récupérer le statut de validation d'une carte pour un utilisateur
@@ -925,6 +935,20 @@ async function updateCardsOrderInCategory(categoryId, orderArray) {
   }
 }
 
+// Mettre à jour l'ordre des catégories (ordre global)
+async function updateCategoriesOrder(orderArray) {
+  const con = await createConnection();
+  try {
+    for (const { id, order_list } of orderArray) {
+      await con.query('UPDATE category SET order_list = ? WHERE id = ?', [order_list, id]);
+    }
+    await con.end();
+  } catch (err) {
+    await con.end();
+    throw err;
+  }
+}
+
 module.exports = {
   getCompletedSeriesCount,
   getTotalExercisesDone,
@@ -975,5 +999,6 @@ module.exports = {
   getUserByResetToken,
   updateUserPassword,
   clearResetToken,
-  updateCardsOrderInCategory
+  updateCardsOrderInCategory,
+  updateCategoriesOrder
 };

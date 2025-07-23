@@ -130,6 +130,7 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
           setLoading(false);
           return;
         }
+        cats.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
         setCategories(cats);
         const cardsObj: Record<string, any[]> = {};
         for (const cat of cats) {

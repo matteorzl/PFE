@@ -6,6 +6,8 @@ import { Spinner, Card, Input, CardBody, CardFooter, Image, Breadcrumbs, Breadcr
 import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
 import { CreateModal } from "@/components/category/CreateModal";
+import { OrderCategoriesModal } from '@/components/category/OrderCategoriesModal';
+import { toast } from 'sonner'; // ou tout autre système de toast si déjà utilisé
 
 interface Category {
   id: number;
@@ -133,6 +135,8 @@ export default function SeriesPage() {
   const[isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Ajoute cet état
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false); // Pour la modale d'ordre des séries
+  const [orderCategories, setOrderCategories] = useState<Category[]>([]); // Pour l'ordre local
   const router = useRouter();
   const iconClasses = "text-xl text-default-500 pointer-events-none flex-shrink-0";
 
@@ -144,6 +148,7 @@ export default function SeriesPage() {
       }
       const data = await response.json();
       setCategories(data);
+      setOrderCategories(data.sort((a: any, b: any) => (a.order_list ?? 9999) - (b.order_list ?? 9999)));
     } catch (error) {
       console.error("Erreur :", error);
     } finally {
@@ -179,7 +184,28 @@ export default function SeriesPage() {
       method: "DELETE",
     });
     if (!res.ok) throw new Error("Erreur lors de la suppression");
-    await fetchCategories(); // Pour rafraîchir la liste après suppression
+    await fetchCategories();
+  };
+
+  const handleOrderChange = async (newOrder: Category[]) => {
+    setOrderCategories(newOrder);
+    // Appel API pour sauvegarder l'ordre côté back
+    try {
+      const order = newOrder.map((cat, idx) => ({ id: cat.id, order_list: idx + 1 }));
+      const res = await fetch('http://localhost:3001/api/categories/order', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order })
+      });
+      if (!res.ok) throw new Error('Erreur lors de la sauvegarde');
+      toast.success('Ordre des séries sauvegardé !');
+    } catch (e) {
+      toast.error('Erreur lors de la sauvegarde de l\'ordre');
+    }
+  };
+  const handleAddCategory = () => {
+    // TODO: Ouvrir une modale ou un select pour ajouter une série non présente
+    alert('Ajouter une série (à implémenter)');
   };
 
   if (loading) {
@@ -203,14 +229,23 @@ export default function SeriesPage() {
             {categories.length}
           </span>
         </span>
-        <Button 
-          color="primary" 
-          endContent={<PlusIcon />}
-          size="sm"
-          onPress={() => setIsCreateModalOpen(true)}
-        >
-          Créer une série
-        </Button>
+        <div className="flex gap-2">
+          <Button
+              color="primary"
+              size="sm"
+              onPress={() => setIsOrderModalOpen(true)}
+            >
+            Ordre des séries
+          </Button>
+          <Button 
+            color="primary" 
+            endContent={<PlusIcon />}
+            size="sm"
+            onPress={() => setIsCreateModalOpen(true)}
+          >
+            Créer une série
+          </Button>
+        </div>
       </h1>
 
       <div className="flex justify-between items-center mb-4">
@@ -327,6 +362,14 @@ export default function SeriesPage() {
           onDelete={handleDeleteCategory}
         />
       )}
+
+      <OrderCategoriesModal
+        isOpen={isOrderModalOpen}
+        onClose={() => setIsOrderModalOpen(false)}
+        categories={orderCategories}
+        onOrderChange={handleOrderChange}
+        onAddCategory={handleAddCategory}
+      />
     </div>
   );
 }

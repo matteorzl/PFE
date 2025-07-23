@@ -46,6 +46,7 @@ const {
   getCategoryById,
   createCategory,
   deleteCategory,
+  updateCategoriesOrder,
   /*card*/
   getAllCards,
   getCardImage,
@@ -1132,5 +1133,20 @@ app.post('/api/categories/:categoryId/cards/order', async (req, res) => {
   } catch (err) {
     console.error("Erreur lors de la mise à jour de l'ordre des cartes :", err);
     res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des cartes" });
+  }
+});
+
+// Mettre à jour l'ordre global des catégories
+app.patch('/api/categories/order', async (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) {
+    return res.status(400).json({ error: "Format de l'ordre invalide" });
+  }
+  try {
+    await updateCategoriesOrder(order);
+    res.status(200).json({ message: "Ordre des séries mis à jour avec succès" });
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour de l'ordre des séries :", err);
+    res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des séries" });
   }
 });
