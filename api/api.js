@@ -326,7 +326,7 @@ app.post("/api/forgot-password", async (req, res) => {
               <html lang="fr">
                 <head>
                   <meta charset="UTF-8" />
-                  <title>Réinitialisation de mot de passe - Soundswipes</title>
+                  <title>Réinitialisation de mot de passe - SoundSwipes</title>
                   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                   <style>
                     body {
@@ -392,7 +392,7 @@ app.post("/api/forgot-password", async (req, res) => {
                     <div class="title">Réinitialisation du mot de passe</div>
                     <div class="subtitle">
                       Bonjour,<br>
-                      Vous avez demandé à réinitialiser votre mot de passe Soundswipes.<br>
+                      Vous avez demandé à réinitialiser votre mot de passe SoundSwipes.<br>
                       Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
                     </div>
                     <a href="${resetUrl}" class="btn">Réinitialiser mon mot de passe</a>
@@ -401,7 +401,7 @@ app.post("/api/forgot-password", async (req, res) => {
                       Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
                     </div>
                     <div class="footer">
-                      &copy; 2025 Soundswipes<br>
+                      &copy; 2025 SoundSwipes<br>
                       <a href="http://localhost:3000/" style="color:#2563eb;text-decoration:none;">soundswipes.fr</a>
                     </div>
                   </div>

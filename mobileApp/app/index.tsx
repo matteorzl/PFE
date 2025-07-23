@@ -1,4 +1,3 @@
-// filepath: c:\Users\33666\Desktop\SoundSwipes\soundswipes\app\index.tsx
 import { Redirect } from 'expo-router';
 import { StripeProvider } from '@stripe/stripe-react-native';
 

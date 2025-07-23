@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-col space-between justify-center bg-gray-50 min-h-screen relative">
         <div className="absolute top-8 flex flex-col items-center w-full">
             <Logo size={120} />
-            <h1 className="text-2xl font-bold text-center">Soundswipes</h1>
+            <h1 className="text-2xl font-bold text-center">SoundSwipes</h1>
         </div>
         <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
             <form className="w-full max-w-s flex flex-col gap-4" onSubmit={handleSubmit}>

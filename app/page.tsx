@@ -72,7 +72,7 @@ export default function LoginPage() {
         {/* Logo en haut */}
         <div className="absolute top-8 flex flex-col items-center w-full">
           <Logo size={120} />
-          <h1 className="text-2xl font-bold text-center">Soundswipes</h1>
+          <h1 className="text-2xl font-bold text-center">SoundSwipes</h1>
         </div>
 
         {/* Formulaire avec fond blanc */}
