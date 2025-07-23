@@ -20,7 +20,7 @@ export default function PendingValidationPage() {
             <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm mx-auto">
                 <div className="text-center mt-4">
                     <p className="text-lg mb-4">
-                        Votre compte thérapeute a bien été <b>créé</b>.<br />
+                        Votre compte d'orthophoniste a bien été <b>créé</b>.<br />
                         Il est en attente de <b>validation</b> par un <span className="text-blue-600">administrateur</span>.
                     </p>
                     <p className="text-gray-500 mb-6">
