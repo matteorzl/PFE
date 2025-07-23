@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.local') });
 
 const { stripe } = require("../stripe-server");
 const express = require('express');
@@ -321,7 +321,93 @@ app.post("/api/forgot-password", async (req, res) => {
             },
             To: [{ Email: user.mail }],
             Subject: "Réinitialisation de votre mot de passe",
-            HTMLPart: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetUrl}">${resetUrl}</a></p>`
+            HTMLPart: `
+              <!DOCTYPE html>
+              <html lang="fr">
+                <head>
+                  <meta charset="UTF-8" />
+                  <title>Réinitialisation de mot de passe - Soundswipes</title>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+                  <style>
+                    body {
+                      background: #f4f6fa;
+                      font-family: 'Segoe UI', Arial, sans-serif;
+                      margin: 0;
+                      padding: 0;
+                    }
+                    .container {
+                      max-width: 420px;
+                      margin: 40px auto;
+                      background: #fff;
+                      border-radius: 18px;
+                      box-shadow: 0 2px 12px rgba(37,99,235,0.07);
+                      padding: 32px 24px 24px 24px;
+                      text-align: center;
+                    }
+                    .logo {
+                      width: 80px;
+                      margin-bottom: 16px;
+                    }
+                    .title {
+                      color: #2563eb;
+                      font-size: 1.5rem;
+                      font-weight: bold;
+                      margin-bottom: 8px;
+                    }
+                    .subtitle {
+                      color: #22223b;
+                      font-size: 1.1rem;
+                      margin-bottom: 24px;
+                    }
+                    .btn {
+                      display: inline-block;
+                      background: #2563eb;
+                      color: #fff !important;
+                      text-decoration: none;
+                      padding: 14px 32px;
+                      border-radius: 999px;
+                      font-weight: 600;
+                      font-size: 1rem;
+                      margin: 24px 0 16px 0;
+                      transition: background 0.2s;
+                    }
+                    .btn:hover {
+                      background: #1d4ed8;
+                    }
+                    .info {
+                      color: #6b7280;
+                      font-size: 0.95rem;
+                      margin-top: 18px;
+                    }
+                    .footer {
+                      color: #a0aec0;
+                      font-size: 0.85rem;
+                      margin-top: 32px;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <div class="container">
+                    <!-- Remplace src par le chemin de ton logo -->
+                    <div class="title">Réinitialisation du mot de passe</div>
+                    <div class="subtitle">
+                      Bonjour,<br>
+                      Vous avez demandé à réinitialiser votre mot de passe Soundswipes.<br>
+                      Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+                    </div>
+                    <a href="${resetUrl}" class="btn">Réinitialiser mon mot de passe</a>
+                    <div class="info">
+                      Ce lien est valable 1 heure.<br>
+                      Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
+                    </div>
+                    <div class="footer">
+                      &copy; 2025 Soundswipes<br>
+                      <a href="http://localhost:3000/" style="color:#2563eb;text-decoration:none;">soundswipes.fr</a>
+                    </div>
+                  </div>
+                </body>
+              </html>
+            `
           }
         ]
       });

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Input, Button } from "@heroui/react";
+import { Logo } from "@/components/icons";
 
 export default function ResetPasswordPage() {
   const params = useSearchParams();
@@ -38,14 +39,8 @@ export default function ResetPasswordPage() {
             <h1 className="text-2xl font-bold text-center">Soundswipes</h1>
         </div>
         <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
-          <h1 className="text-2xl font-bold text-center mb-4">
-            Content de vous revoir 😊
-          </h1>
-          <p className="text-center text-gray-500 mb-6">
-            Connectez-vous à votre compte pour continuer.
-          </p>
           <form className="space-y-4" onSubmit={handleSubmit}>
-            <h1 className="text-xl font-bold mb-2">Nouveau mot de passe</h1>
+            <h1 className="text-xl text-center font-bold mb-2">Nouveau mot de passe</h1>
             <Input
             label="Nouveau mot de passe"
             type="password"
@@ -53,7 +48,7 @@ export default function ResetPasswordPage() {
             onChange={e => setPassword(e.target.value)}
             required
             />
-            <Button color="primary" type="submit">Réinitialiser</Button>
+            <Button className="w-full" color="primary" type="submit">Réinitialiser</Button>
             {done && <div className="text-green-600">Mot de passe réinitialisé !</div>}
             {error && <div className="text-red-600">{error}</div>}
           </form>
@@ -61,15 +56,9 @@ export default function ResetPasswordPage() {
             <div className="text-center mt-4 text-red-500">{error}</div>
           )}
           <div className="text-center mt-4">
-            <a href="/forgot-password" className="text-sm text-blue-600">
-              Mot de passe oublié ?
+            <a href="/" className="text-sm text-blue-600">
+              Se connecter
             </a>
-          </div>
-          <div className="text-center mt-6 text-gray-500">
-            Vous n'avez pas de compte ?{" "}
-            <Link href="/register" className="text-blue-600">
-              S'inscrire
-            </Link>
           </div>
         </div>
       </div>
