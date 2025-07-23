@@ -20,7 +20,9 @@ export default function RegisterPage() {
       password: formData.password as string,
       country: formData.country as string || "",
       city: formData.city as string || "",
-      role : 'therapist'
+      role : 'therapist',
+      professional_number: formData.professional_number as string,
+      indentification_type: formData.indentification_type as string,
     };
 
     try {
@@ -99,6 +101,34 @@ export default function RegisterPage() {
               placeholder="Entrez votre ville (optionnel)"
               type="text"
             />
+            <Input
+              isRequired
+              label="Numéro professionnel"
+              name="professional_number"
+              placeholder="Entrez votre numéro professionnel"
+              type="text"
+            />
+            <div>
+              <label className="block font-medium mb-2">Type d’identification</label>
+              <div className="flex gap-4">
+                <label>
+                  <input
+                    type="radio"
+                    name="indentification_type"
+                    value="ADELI"
+                    required
+                  /> ADELI
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="indentification_type"
+                    value="RPPS"
+                    required
+                  /> RPPS
+                </label>
+              </div>
+            </div>
             <Button className="w-full" color="primary" type="submit">
                 Créer son compte
             </Button>

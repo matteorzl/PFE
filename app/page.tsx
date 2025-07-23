@@ -57,7 +57,15 @@ export default function LoginPage() {
         router.push("/home");
       } else {
         const errorData = await response.json();
+        if (
+          errorData.error &&
+          errorData.error.toLowerCase().includes("attente de validation")
+        ) {
+          router.push("/pending-validation");
+          return;
+        }
         setError(errorData.error || "Erreur lors de la connexion.");
+        return;
       }
     } catch (err) {
       console.error("Erreur lors de la requête :", err);

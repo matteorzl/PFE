@@ -60,7 +60,14 @@ async function createUser(user) {
     if (role === 'patient') {
       await con.execute('INSERT INTO patient (user_id) VALUES (?)', [userId]);
     } else if (role === 'therapist') {
-      await con.execute('INSERT INTO Therapist (user_id) VALUES (?)', [userId]);
+      await con.execute(
+        'INSERT INTO therapist (user_id, professional_number, indentification_type) VALUES (?, ?, ?)',
+        [
+          userId,
+          user.professional_number ?? null,
+          user.indentification_type ?? null
+        ]
+      );
     }
 
     await con.end();
@@ -74,7 +81,10 @@ async function createUser(user) {
 // Mettre à jour un utilisateur
 async function loginUser(email, password) {
   const query = `
-    SELECT * FROM users WHERE mail = ?;
+    SELECT users.*, therapist.is_validated
+    FROM users
+    LEFT JOIN therapist ON therapist.user_id = users.id
+    WHERE users.mail = ?;
   `;
 
   try {
@@ -97,9 +107,17 @@ async function loginUser(email, password) {
       throw new Error("Mot de passe incorrect");
     }
 
+    // Vérifie la validation du thérapeute
+    if (user.role === "therapist" && user.is_validated !== 1) {
+      const err = new Error("Compte en attente de validation");
+      err.code = "THERAPIST_PENDING";
+      throw err;
+    }
+
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
   } catch (err) {
+    if (err.code === "THERAPIST_PENDING") throw err;
     console.error("Erreur lors de la connexion :", err);
     throw err;
   }
