@@ -183,7 +183,10 @@ export default function UserScreen() {
     >
       <TouchableOpacity onPress={() => router.replace('/series')} style={styles.backButton}>
         <Ionicons name="arrow-back" size={34} color="#302f2f" />
-        </TouchableOpacity>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.replace('/login')} style={styles.logoutButton}>
+        <Ionicons name="log-out-outline" size={34} color="#302f2f" />
+      </TouchableOpacity>
       <View style={styles.card}>
         <Ionicons name="person-circle-outline" size={90} color="#302f2f" />
         <Text style={styles.name}>{user.firstname} {user.lastname}</Text>
@@ -422,9 +425,9 @@ export default function UserScreen() {
                   </View>
                 </>
               ) : (
-                <View style={styles.contentLast}>
+                <View style={{ alignItems: 'center', width: '100%'}}>
                   {patient.is_accepted === 1 ? (
-                    <Text style={styles.value}>
+                    <Text style={[styles.value,{margin:8, textAlign:'center',fontWeight:'bold'}]}>
                       {patientTherapist[0].name}
                     </Text>
                   ) : (
@@ -512,6 +515,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 45,
     left: 16,
+    zIndex: 10,
+    padding: 8,
+  },
+  logoutButton: {
+    position: 'absolute',
+    top: 45,
+    right: 16,
     zIndex: 10,
     padding: 8,
   },

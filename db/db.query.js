@@ -246,6 +246,18 @@ async function getPatientByUserId(userId) {
   }
 }
 
+async function getPatientById(id) {
+  const query = `SELECT * FROM patient WHERE id = ?`;
+  try {
+    const con = await createConnection();
+    const [rows] = await con.query(query, [id]);
+    await con.end();
+    return rows[0];
+  } catch (err) {
+    throw err;
+  }
+}
+
 // Vérifier si un utilisateur est premium
 async function isPremium(id) {
   const query = `
@@ -486,7 +498,6 @@ async function getPatientTherapist(id) {
 
 // Mettre à jour le thérapeute d'un patient
 async function updatePatientTherapist(id, therapist_id) {
-  // On récupère d'abord le patient
   const con = await createConnection();
   try {
     const [patients] = await con.query('SELECT affiliation_count, is_accepted FROM patient WHERE id = ?', [id]);
@@ -494,18 +505,11 @@ async function updatePatientTherapist(id, therapist_id) {
     if (patients.length === 0) throw new Error('Patient non trouvé');
     const patient = patients[0];
     if (therapist_id) {
-      // Nouvelle demande : on incrémente
       newAffiliationCount = (patient.affiliation_count || 0) + 1;
       await con.execute('UPDATE patient SET therapist_id = ?, affiliation_count = ? WHERE id = ?', [therapist_id, newAffiliationCount, id]);
     } else {
-      // Annulation de la demande : on ne touche pas au compteur
       await con.execute('UPDATE patient SET therapist_id = NULL WHERE id = ?', [id]);
       newAffiliationCount = patient.affiliation_count || 0;
-    }
-    // Si le patient est accepté, on remet à zéro
-    if (patient.is_accepted === 1) {
-      await con.execute('UPDATE patient SET affiliation_count = 0 WHERE id = ?', [id]);
-      newAffiliationCount = 0;
     }
     await con.end();
     return newAffiliationCount;
@@ -629,6 +633,9 @@ async function validateTherapist(id, is_validated) {
 // Valider un patient
 async function validatePatient(id, is_accepted) {
   const query = `UPDATE patient SET is_accepted = ? WHERE user_id = ?`;
+  if(is_accepted === 1 ){
+   query = `UPDATE patient SET is_accepted = ?, affiliation_count = 0 WHERE user_id = ?`;
+  }
   const values = [is_accepted, id];
   const con = await createConnection();
   await con.execute(query, values);
@@ -972,6 +979,7 @@ module.exports = {
   getUserCategoryProgress,
   cardValidated,
   getPatientByUserId,
+  getPatientById,
   updatePatient,
   updatePatientTherapist,
   getAllTherapists,

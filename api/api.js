@@ -31,6 +31,7 @@ const {
   getCategoriesOrderedForUser,
   /*patient*/
   getPatientByUserId,
+  getPatientById,
   updatePatient,
   updatePatientTherapist,
   validatePatient,
@@ -673,7 +674,7 @@ app.patch('/api/patient/:id/therapist', async (req, res) => {
       // Récupérer infos thérapeute
       const therapistInfos = await getTherapistUserInfos(therapist_id);
       // Récupérer infos patient
-      const patient = await getPatientByUserId(id); // id = patient.id
+      const patient = await getPatientById(id); // id = patient.id
       // Récupérer nom/prénom du patient (via users)
       let patientUser = null;
       if (patient && patient.user_id) {
