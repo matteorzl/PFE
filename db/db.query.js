@@ -486,18 +486,31 @@ async function getPatientTherapist(id) {
 
 // Mettre à jour le thérapeute d'un patient
 async function updatePatientTherapist(id, therapist_id) {
-  const query = `
-    UPDATE patient
-    SET therapist_id = ?
-    WHERE id = ?
-  `;
-  const values = [therapist_id, id];
+  // On récupère d'abord le patient
+  const con = await createConnection();
   try {
-    const con = await createConnection();
-    await con.execute(query, values);
+    const [patients] = await con.query('SELECT affiliation_count, is_accepted FROM patient WHERE id = ?', [id]);
+    let newAffiliationCount = 0;
+    if (patients.length === 0) throw new Error('Patient non trouvé');
+    const patient = patients[0];
+    if (therapist_id) {
+      // Nouvelle demande : on incrémente
+      newAffiliationCount = (patient.affiliation_count || 0) + 1;
+      await con.execute('UPDATE patient SET therapist_id = ?, affiliation_count = ? WHERE id = ?', [therapist_id, newAffiliationCount, id]);
+    } else {
+      // Annulation de la demande : on ne touche pas au compteur
+      await con.execute('UPDATE patient SET therapist_id = NULL WHERE id = ?', [id]);
+      newAffiliationCount = patient.affiliation_count || 0;
+    }
+    // Si le patient est accepté, on remet à zéro
+    if (patient.is_accepted === 1) {
+      await con.execute('UPDATE patient SET affiliation_count = 0 WHERE id = ?', [id]);
+      newAffiliationCount = 0;
+    }
     await con.end();
+    return newAffiliationCount;
   } catch (err) {
-    console.error("Erreur lors de la modification du patient :", err);
+    await con.end();
     throw err;
   }
 }
@@ -909,6 +922,20 @@ async function clearResetToken(userId) {
   await con.end();
 }
 
+// Ajout utilitaire pour récupérer les infos du thérapeute (mail, prénom, nom) à partir de son id
+async function getTherapistUserInfos(therapistId) {
+  const query = `
+    SELECT users.mail, users.firstname, users.lastname
+    FROM therapist
+    JOIN users ON users.id = therapist.user_id
+    WHERE therapist.id = ?
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [therapistId]);
+  await con.end();
+  return rows[0] || null;
+}
+
 module.exports = {
   getCompletedSeriesCount,
   getTotalExercisesDone,
@@ -958,5 +985,6 @@ module.exports = {
   saveResetToken,
   getUserByResetToken,
   updateUserPassword,
-  clearResetToken
+  clearResetToken,
+  getTherapistUserInfos
 };

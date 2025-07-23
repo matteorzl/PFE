@@ -87,6 +87,7 @@ CREATE TABLE `patient` (
   `phone` varchar(20) DEFAULT NULL,
   `parent_name` varchar(100) DEFAULT NULL,
   `parent_lastname` varchar(20) DEFAULT NULL,
+  `affiliation_count` int(11) DEFAULT (0),
   `is_accepted` int(11) DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP

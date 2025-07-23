@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SelectList } from 'react-native-dropdown-select-list'
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, TextInput, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function UserScreen() {
   const [user, setUser] = useState<any | null>(null);
@@ -23,8 +24,39 @@ export default function UserScreen() {
   const [therapists, setTherapists] = useState<any[]>([]);
   const [patientTherapist, setPatientTherapist] = useState<any | null>(null);
   const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(null);
+  const [affiliationCount, setAffiliationCount] = useState(0);
+  const [showInfo, setShowInfo] = useState(false);
 
   const router = useRouter();
+
+  // Fonction pour rafraîchir les infos utilisateur et patient
+  async function refreshUserAndPatient() {
+    if (userId) {
+      setLoading(true);
+      try {
+        const [userData, patientData] = await Promise.all([
+          fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/users/${userId}`).then(res => res.json()),
+          fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${userId}`).then(res => res.json())
+        ]);
+        setUser(userData);
+        setPatient(patientData);
+        if (patientData?.therapist_id) {
+          fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/therapist/patient/${patientData.id}`)
+            .then(res => res.json())
+            .then(data => setPatientTherapist(data))
+            .catch(() => setPatientTherapist(null));
+        } else {
+          setPatientTherapist(null);
+        }
+      } catch {
+        setUser(null);
+        setPatient(null);
+        setPatientTherapist(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
 
   useEffect(() => {
     if (userId) {
@@ -61,8 +93,12 @@ export default function UserScreen() {
         .then(res => res.json())
         .then(data => setTherapists(data))
         .catch(() => setTherapists([]));
+      // Récupérer le compteur d'affiliation du patient
+      if (patient?.affiliation_count !== undefined) {
+        setAffiliationCount(patient.affiliation_count);
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, patient]);
 
   useEffect(() => {
     if (userId) {
@@ -105,7 +141,10 @@ export default function UserScreen() {
         body: JSON.stringify({ therapist_id: therapistId }),
       });
       if (res.ok) {
+        const data = await res.json();
+        setAffiliationCount(data.affiliation_count);
         Alert.alert('Succès', 'Thérapeute assigné !');
+        await refreshUserAndPatient();
       } else {
         Alert.alert('Erreur', 'Impossible d\'assigner le thérapeute');
       }
@@ -339,8 +378,13 @@ export default function UserScreen() {
             </>
           ) : activeTab === 'therapist' && (
             <>
-              <View style={styles.contentFirst}>
-                <Text style={styles.tab}>Orthophoniste</Text>
+              <View style={[styles.contentFirst, {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}]}>
+                <View style={{flex:1, alignItems:'center'}}>
+                  <Text style={[styles.tab, {textAlign:'center'}]}>Orthophoniste</Text>
+                </View>
+                <TouchableOpacity onPress={() => setShowInfo(v => !v)} style={{marginRight: 8}}>
+                  <MaterialIcons name="info-outline" size={18} color="#5558fd" />
+                </TouchableOpacity>
               </View>
               {!patient?.therapist_id ? (
                 <>
@@ -361,9 +405,15 @@ export default function UserScreen() {
                           dropdownStyles={{ backgroundColor: '#f5f5f5', borderRadius: 8 }}
                         />
                         <TouchableOpacity
-                          style={[styles.button, { opacity: selectedTherapistId ? 1 : 0.5 }]}
-                          disabled={!selectedTherapistId}
-                          onPress={() => assignTherapist(selectedTherapistId || '')}
+                          style={[styles.button, { opacity: selectedTherapistId && affiliationCount < 3 ? 1 : 0.5 }]}
+                          disabled={!selectedTherapistId || affiliationCount >= 3}
+                          onPress={() => {
+                            if (affiliationCount >= 3) {
+                              Alert.alert('Limite atteinte', 'Vous avez atteint la limite de demandes. Veuillez contacter un administrateur.');
+                              return;
+                            }
+                            assignTherapist(selectedTherapistId || '');
+                          }}
                         >
                           <Text style={styles.buttonText}>Valider</Text>
                         </TouchableOpacity>
@@ -373,16 +423,26 @@ export default function UserScreen() {
                 </>
               ) : (
                 <View style={styles.contentLast}>
-                  <TextInput style={styles.label}>Thérapeute :</TextInput>
                   {patient.is_accepted === 1 ? (
                     <Text style={styles.value}>
                       {patientTherapist[0].name}
                     </Text>
                   ) : (
-                    <View style={{ alignItems: 'flex-start', width: '80%', marginTop: 16 }}>
-                      <Text style={[styles.value, {marginTop:8}]}>En attente de validation</Text>
+                    <View style={{ alignItems: 'center', width: '100%', marginTop: 16 }}>
+                      <Text style={[styles.value, {marginTop:8, textAlign:'center'}]}>En attente de validation</Text>
+                      {showInfo && (
+                        <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 10, marginTop: 8, borderWidth: 1, borderColor: '#5558fd', width: 260 }}>
+                          <Text style={{ color: '#302f2f', fontSize: 13, marginBottom: 6 }}>
+                            Vous pouvez faire jusqu&apos;à 3 demandes d&apos;affiliation à un orthophoniste. Au-delà, votre compte sera bloqué et un administrateur devra intervenir.
+                          </Text>
+                          <Text style={{ color: '#5558fd', fontWeight: 'bold', fontSize: 14 }}>
+                            Nombre de demandes effectuées : {affiliationCount} / 3
+                          </Text>
+                        </View>
+                      )}
                       <TouchableOpacity
-                        style={[styles.button, {marginTop:8, backgroundColor:'#ff4d4d'}]}
+                        style={[styles.button, {marginTop:8, backgroundColor:'#ff4d4d', opacity: affiliationCount >= 3 ? 0.5 : 1}]}
+                        disabled={affiliationCount >= 3}
                         onPress={async () => {
                           try {
                             const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/patient/${patient.id}/therapist`, {
@@ -394,6 +454,7 @@ export default function UserScreen() {
                               Alert.alert('Succès', 'Demande annulée.');
                               setPatient({ ...patient, therapist_id: null });
                               setPatientTherapist(null);
+                              await refreshUserAndPatient();
                             } else {
                               Alert.alert('Erreur', 'Impossible d\'annuler la demande');
                             }

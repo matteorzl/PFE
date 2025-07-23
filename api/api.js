@@ -60,6 +60,7 @@ const {
   getAllTherapists,
   getTherapistIdByUserId,
   getPatientTherapist,
+  getTherapistUserInfos,
 
   /* Reset Password */
   getUserByEmail,
@@ -665,8 +666,46 @@ app.patch('/api/patient/:id/therapist', async (req, res) => {
   const { id } = req.params;
   const { therapist_id } = req.body;
   try {
-    await updatePatientTherapist(id, therapist_id);
-    res.status(200).json({ message: "Patient modifié avec succès !" });
+    const affiliation_count = await updatePatientTherapist(id, therapist_id);
+    // Envoi du mail au thérapeute si une demande est créée
+    if (therapist_id) {
+      // Récupérer infos thérapeute
+      const therapistInfos = await getTherapistUserInfos(therapist_id);
+      // Récupérer infos patient
+      const patient = await getPatientByUserId(id); // id = patient.id
+      // Récupérer nom/prénom du patient (via users)
+      let patientUser = null;
+      if (patient && patient.user_id) {
+        patientUser = await getUserById(patient.user_id);
+      }
+      if (therapistInfos && therapistInfos.mail && patientUser) {
+        await mailjetClient
+          .post("send", { version: "v3.1" })
+          .request({
+            Messages: [
+              {
+                From: {
+                  Email: process.env.MAILJET_FROM_EMAIL,
+                  Name: process.env.MAILJET_FROM_NAME,
+                },
+                To: [{ Email: therapistInfos.mail }],
+                Subject: "Nouvelle demande d'affiliation sur SoundSwipes",
+                HTMLPart: `
+                  <div style='font-family:Arial,sans-serif;font-size:16px;'>
+                    Bonjour ${therapistInfos.firstname},<br><br>
+                    Vous avez reçu une nouvelle demande d'affiliation de la part du patient <b>${patientUser.firstname} ${patientUser.lastname}</b>.<br>
+                    Connectez-vous à votre espace SoundSwipes pour accepter ou refuser cette demande.<br><br>
+                    <a href="http://localhost:3000/" style="display:inline-block;padding:10px 24px;background:#2563eb;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold;">Accéder à SoundSwipes</a>
+                    <br><br>
+                    Merci,<br>L'équipe SoundSwipes
+                  </div>
+                `
+              }
+            ]
+          });
+      }
+    }
+    res.status(200).json({ message: "Patient modifié avec succès !", affiliation_count });
   } catch (err) {
     console.error("Erreur lors de la modification du patient :", err);
     res.status(500).json({ error: err.message });
