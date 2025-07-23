@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Form, Input, Button } from "@heroui/react";
+import { Logo } from "@/components/icons";
 
 export default function RegisterPage() {
   const [action, setAction] = useState<string | null>(null);
@@ -45,68 +46,74 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="flex flex-col items-center">
-        <h1 className="text-2xl font-bold">Inscription</h1>
-        <Form
-          className="mt-6 w-full max-w-xs flex flex-col gap-4"
-          validationBehavior="native"
-          onSubmit={handleRegister}
-        >
-          <Input
-            isRequired
-            label="Prénom"
-            name="firstname"
-            placeholder="Entrez votre prénom"
-            type="text"
-          />
-          <Input
-            isRequired
-            label="Nom"
-            name="lastname"
-            placeholder="Entrez votre nom"
-            type="text"
-          />
-          <Input
-            isRequired
-            label="Adresse mail"
-            name="email"
-            placeholder="Entrez votre adresse mail"
-            type="email"
-          />
-          <Input
-            isRequired
-            label="Mot de passe"
-            name="password"
-            placeholder="Entrez votre mot de passe"
-            type="password"
-          />
-          <Input
-            label="Pays"
-            name="country"
-            placeholder="Entrez votre pays (optionnel)"
-            type="text"
-          />
-          <Input
-            label="Ville"
-            name="city"
-            placeholder="Entrez votre ville (optionnel)"
-            type="text"
-          />
-          <div className="flex gap-2">
-            <Button color="primary" type="submit">
-              S'inscrire
+    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col space-between justify-center bg-gray-50 min-h-screen relative">
+      <div className="absolute top-8 flex flex-col items-center w-full">
+          <Logo size={120} />
+          <h1 className="text-2xl font-bold text-center">Soundswipes</h1>
+      </div>
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm p-8 mx-auto">
+          <h1 className="text-2xl font-bold text-center">Inscription</h1>
+          <Form
+            className="mt-6 w-full max-w-s flex flex-col gap-4"
+            validationBehavior="native"
+            onSubmit={handleRegister}
+          >
+            <Input
+              isRequired
+              label="Prénom"
+              name="firstname"
+              placeholder="Entrez votre prénom"
+              type="text"
+            />
+            <Input
+              isRequired
+              label="Nom"
+              name="lastname"
+              placeholder="Entrez votre nom"
+              type="text"
+            />
+            <Input
+              isRequired
+              label="Adresse mail"
+              name="email"
+              placeholder="Entrez votre adresse mail"
+              type="email"
+            />
+            <Input
+              isRequired
+              label="Mot de passe"
+              name="password"
+              placeholder="Entrez votre mot de passe"
+              type="password"
+            />
+            <Input
+              label="Pays"
+              name="country"
+              placeholder="Entrez votre pays (optionnel)"
+              type="text"
+            />
+            <Input
+              label="Ville"
+              name="city"
+              placeholder="Entrez votre ville (optionnel)"
+              type="text"
+            />
+            <Button className="w-full" color="primary" type="submit">
+                Créer son compte
             </Button>
-            <Button type="reset" variant="flat">
-              Réinitialiser
-            </Button>
+            {action && (
+              <div className="text-small text-default-500">
+                Action: <code>{action}</code>
+              </div>
+            )}
+          </Form>
+          <div className="text-center mt-6">
+            <a href="/" className="text-sm underline text-blue-600">
+                Vous avez déjà un compte ?
+            </a>
           </div>
-          {action && (
-            <div className="text-small text-default-500">
-              Action: <code>{action}</code>
-            </div>
-          )}
-        </Form>
+        </div>
       </div>
     </div>
   );

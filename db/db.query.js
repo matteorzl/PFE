@@ -71,6 +71,7 @@ async function createUser(user) {
   }
 }
 
+// Mettre à jour un utilisateur
 async function loginUser(email, password) {
   const query = `
     SELECT * FROM users WHERE mail = ?;
@@ -194,7 +195,6 @@ const deleteUser = async (userId, role) => {
       await con.query('DELETE FROM patient_category WHERE patient_id = ?', [patientId]);
       await con.query('DELETE FROM patient_card WHERE patient_id = ?', [patientId]);
       await con.query('DELETE FROM billing WHERE user_id = ?', [userId]);
-      // Ajoute ici d'autres suppressions si tu as d'autres tables associées au patient
       // Supprimer le patient
       await con.query('DELETE FROM patient WHERE user_id = ?', [userId]);
       // Mettre à jour le champ is_deleted dans users
@@ -215,6 +215,7 @@ const deleteUser = async (userId, role) => {
   }
 };
 
+// Récupérer un patient par son userId
 async function getPatientByUserId(userId) {
   const query = `SELECT * FROM patient WHERE user_id = ?`;
   try {
@@ -227,6 +228,7 @@ async function getPatientByUserId(userId) {
   }
 }
 
+// Vérifier si un utilisateur est premium
 async function isPremium(id) {
   const query = `
     SELECT 1 FROM billing
@@ -266,6 +268,7 @@ async function getUserById(id) {
   }
 }
 
+// Récupérer tous les utilisateurs
 async function getAllUsers() {
   const query = `
   SELECT 
@@ -298,6 +301,7 @@ async function getAllUsers() {
   }
 }
 
+// Récupérer les catégories associées à un utilisateur, ordonnées par ordre de liste et nom
 async function getCategoriesOrderedForUser(userId) {
   const con = await createConnection();
 
@@ -324,6 +328,7 @@ async function getCategoriesOrderedForUser(userId) {
   return rows;
 }
 
+// Récupérer le statut de validation d'une carte pour un utilisateur
 async function getCardValidationStatusForUser(userId, cardId, category_id) {
   const con = await createConnection();
   const [patients] = await con.query(
@@ -343,6 +348,7 @@ async function getCardValidationStatusForUser(userId, cardId, category_id) {
   return rows.length > 0 ? rows[0].is_validated : 0;
 }
 
+// Récupérer la progression d'un utilisateur dans une catégorie
 async function getUserCategoryProgress(userId, categoryId) {
   const con = await createConnection();
   const [patients] = await con.query(
@@ -372,6 +378,7 @@ async function getUserCategoryProgress(userId, categoryId) {
   return total === 0 ? 0 : Math.round((validated / total) * 100);
 }
 
+// Valider une carte pour un utilisateur
 async function cardValidated(userId, cardId, categoryId){
   const con = await createConnection();
   const [patients] = await con.query(
@@ -399,6 +406,7 @@ async function cardValidated(userId, cardId, categoryId){
   return { alreadyValidated: false };
 }
 
+// Récupérer toutes les catégories
 async function getAllCategories() {
   const query = `SELECT * FROM category
       ORDER BY is_free DESC`;
@@ -415,6 +423,7 @@ async function getAllCategories() {
   }
 }
 
+// Mettre à jour un patient
 async function updatePatient(id, parent_firstname, parent_lastname, phone) {
   const query = `
     UPDATE patient
@@ -433,6 +442,7 @@ async function updatePatient(id, parent_firstname, parent_lastname, phone) {
   }
 }
 
+// Récupérer le thérapeute d'un patient
 async function getPatientTherapist(id) {
   const query = `
     SELECT therapist_id, CONCAT(users.firstname, ' ', users.lastname) AS name
@@ -456,6 +466,7 @@ async function getPatientTherapist(id) {
   }
 }
 
+// Mettre à jour le thérapeute d'un patient
 async function updatePatientTherapist(id, therapist_id) {
   const query = `
     UPDATE patient
@@ -473,7 +484,7 @@ async function updatePatientTherapist(id, therapist_id) {
   }
 }
 
-
+// Récupérer les cartes d'une catégorie
 async function getCardsByCategory(categoryId) {
   const query = `
     SELECT * FROM card
@@ -493,6 +504,7 @@ async function getCardsByCategory(categoryId) {
   }
 }
 
+// Mettre à jour une catégorie
 async function updateCategory(id, name, description, image, is_free, difficulty) {
   let query, values;
   if (image) {
@@ -513,6 +525,7 @@ async function updateCategory(id, name, description, image, is_free, difficulty)
   }
 }
 
+// Récupérer une catégorie par son ID
 async function getCategoryById(categoryId) {
   const query = `
     SELECT * FROM category
@@ -531,6 +544,7 @@ async function getCategoryById(categoryId) {
   }
 }
 
+// Récupérer les cartes qui ne sont pas dans une catégorie spécifique
 async function getCardsNotInCategory(categoryId) {
   const query = `
     SELECT * FROM card
@@ -544,6 +558,7 @@ async function getCardsNotInCategory(categoryId) {
   return rows;
 }
 
+// Ajouter des cartes à une catégorie
 async function addCardsToCategory(categoryId, cardIds) {
   const con = await createConnection();
   try {
@@ -558,6 +573,7 @@ async function addCardsToCategory(categoryId, cardIds) {
   }
 }
 
+// Récupérer l'id du thérapeute à partir de l'id de l'utilisateur
 async function getTherapistIdByUserId(userId) {
   const query = `SELECT * FROM therapist WHERE user_id = ?`;
   try {
@@ -570,6 +586,7 @@ async function getTherapistIdByUserId(userId) {
   }
 }
 
+// Valider un thérapeute
 async function validateTherapist(id, is_validated) {
   const query = `UPDATE therapist SET is_validated = ? WHERE user_id = ?`;
   const values = [is_validated, id];
@@ -578,6 +595,7 @@ async function validateTherapist(id, is_validated) {
   await con.end();
 }
 
+// Valider un patient
 async function validatePatient(id, is_accepted) {
   const query = `UPDATE patient SET is_accepted = ? WHERE user_id = ?`;
   const values = [is_accepted, id];
@@ -586,6 +604,7 @@ async function validatePatient(id, is_accepted) {
   await con.end();
 }
 
+// Créer un paiement utilisateur
 async function createUserPayment(payment){
   const {userId, phone, line1, line2, city, zipcode} = payment
   const query = `
@@ -641,6 +660,7 @@ const deleteCategory = async (categoryId) => {
   }
 };
 
+// Créer une nouvelle catégorie
 async function createCategory(name, description, therapistId, image, is_free, difficulty) {
   const query = `
     INSERT INTO category (name, description, image, created_by, is_free, difficulty)
@@ -738,6 +758,7 @@ async function createCard(name, draw_animation, real_animation, sound_file) {
   }
 }
 
+// Valider une carte
 async function validateCard(id, name, draw_animation, real_animation, sound_file, is_validated) {
   console.log('validateCard', { id, is_validated }); // Ajoute ce log
   if (is_validated === undefined) return;
@@ -791,6 +812,7 @@ async function updateCard(id, name, draw_animation, real_animation, sound_file) 
   }
 }
 
+// Récupérer tous les thérapeutes validés
 async function getAllTherapists() {
   const query = `
     SELECT therapist.id, CONCAT(users.firstname, ' ', users.lastname) AS name
@@ -828,6 +850,45 @@ async function deleteCard(cardId) {
   } finally {
     await con.end();
   }
+}
+
+// Fonction pour récupérer un utilisateur par son email
+async function getUserByEmail(email) {
+  const con = await createConnection();
+  const [rows] = await con.query('SELECT * FROM users WHERE mail = ?', [email]);
+  await con.end();
+  return rows[0];
+}
+
+// Fonction pour sauvegarder un token de réinitialisation de mot de passe
+async function saveResetToken(userId, token, expires) {
+  const con = await createConnection();
+  await con.query('UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE id = ?', [token, expires, userId]);
+  await con.end();
+}
+
+// Fonction pour récupérer un utilisateur par son token de réinitialisation
+async function getUserByResetToken(token) {
+  const con = await createConnection();
+  const [rows] = await con.query('SELECT * FROM users WHERE reset_token = ?', [token]);
+  await con.end();
+  return rows[0];
+}
+
+// Fonction pour mettre à jour le mot de passe d'un utilisateur
+async function updateUserPassword(userId, password) {
+  const bcrypt = require('bcrypt');
+  const hash = await bcrypt.hash(password, 10);
+  const con = await createConnection();
+  await con.query('UPDATE users SET password = ? WHERE id = ?', [hash, userId]);
+  await con.end();
+}
+
+// Fonction pour supprimer le token de réinitialisation après utilisation
+async function clearResetToken(userId) {
+  const con = await createConnection();
+  await con.query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = ?', [userId]);
+  await con.end();
 }
 
 module.exports = {
@@ -874,4 +935,10 @@ module.exports = {
   validateCard,
   updateCard,
   deleteCard,
+  
+  getUserByEmail,
+  saveResetToken,
+  getUserByResetToken,
+  updateUserPassword,
+  clearResetToken
 };

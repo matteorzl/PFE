@@ -1,9 +1,17 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 const { stripe } = require("../stripe-server");
 const express = require('express');
 const multer = require('multer');
 const upload = multer();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const mailjet = require('node-mailjet')
+const mailjetClient = mailjet.apiConnect(
+  process.env.MAILJET_API_KEY,
+  process.env.MAILJET_API_SECRET
+);
+const crypto = require("crypto");
 const { 
   /* Dashboard */
   getCompletedSeriesCount,
@@ -52,6 +60,13 @@ const {
   getAllTherapists,
   getTherapistIdByUserId,
   getPatientTherapist,
+
+  /* Reset Password */
+  getUserByEmail,
+  saveResetToken,
+  getUserByResetToken,
+  updateUserPassword,
+  clearResetToken
 } = require('../db/db.query');
 
 const app = express(); 
@@ -276,9 +291,72 @@ app.get('/api/user/:userId/categories', async (req, res) => {
   }
 });
 
+// Récupérer les informations d'un utilisateur par son email
+app.post("/api/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email requis" });
+
+  try {
+    // Récupère l'utilisateur
+    const user = await getUserByEmail(email);
+    if (!user) return res.status(200).json({ success: true }); // Ne jamais révéler si l'email existe
+
+    // Génère un token
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 3600 * 1000); // 1h
+
+    // Stocke le token et l'expiration
+    await saveResetToken(user.id, token, expires);
+
+    // Envoie le mail
+    const resetUrl = `${process.env.RESET_PASSWORD_URL}?token=${token}`;
+    await mailjetClient
+      .post("send", { version: "v3.1" })
+      .request({
+        Messages: [
+          {
+            From: {
+              Email: process.env.MAILJET_FROM_EMAIL,
+              Name: process.env.MAILJET_FROM_NAME,
+            },
+            To: [{ Email: user.mail }],
+            Subject: "Réinitialisation de votre mot de passe",
+            HTMLPart: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetUrl}">${resetUrl}</a></p>`
+          }
+        ]
+      });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Erreur forgot-password:", err);
+    res.status(500).json({ error: "Erreur lors de la demande." });
+  }
+});
+
+// Réinitialiser le mot de passe
+app.post("/api/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: "Champs requis" });
+
+  try {
+    const user = await getUserByResetToken(token);
+    if (!user || !user.reset_token_expires || user.reset_token_expires < new Date()) {
+      return res.status(400).json({ error: "Lien invalide ou expiré" });
+    }
+    await updateUserPassword(user.id, password);
+    await clearResetToken(user.id);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Erreur reset-password:", err);
+    res.status(500).json({ error: "Erreur lors de la réinitialisation." });
+  }
+});
+
 //////////////
 /* PATIENT */
 ////////////
+
+// Récupérer un patient par son userId
 app.get('/api/patient/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -290,6 +368,7 @@ app.get('/api/patient/:userId', async (req, res) => {
   }
 });
 
+// Modifier un patient
 app.patch('/api/patient/:id', async (req, res) => {
   const { id } = req.params;
   const { parent_firstname, parent_lastname, phone } = req.body;
@@ -302,6 +381,7 @@ app.patch('/api/patient/:id', async (req, res) => {
   }
 });
 
+// Récupérer le statut de validation d'une carte pour un utilisateur
 app.get('/api/patient/:userId/category/:categoryId/card/:cardId/status', async (req, res) => {
   const { userId, cardId, categoryId } = req.params;
   try {
@@ -313,6 +393,7 @@ app.get('/api/patient/:userId/category/:categoryId/card/:cardId/status', async (
   }
 });
 
+// Récupérer la progression d'un utilisateur dans une catégorie
 app.get('/api/patient/:userId/category/:categoryId/progress', async (req, res) => {
   const { userId, categoryId } = req.params;
   try {
@@ -324,6 +405,7 @@ app.get('/api/patient/:userId/category/:categoryId/progress', async (req, res) =
   }
 });
 
+// Mettre à jour l'ordre des catégories d'un patient
 app.patch('/api/user/:userId/categories/order', async (req, res) => {
   const { userId } = req.params;
   const { categoryIds } = req.body;
@@ -335,6 +417,7 @@ app.patch('/api/user/:userId/categories/order', async (req, res) => {
   }
 });
 
+// Valider une carte pour un utilisateur
 app.post('/api/validate/card', async (req,res)=> {
   const { userId, cardId, categoryId } = req.body;
   try {

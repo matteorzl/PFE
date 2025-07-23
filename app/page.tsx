@@ -111,13 +111,13 @@ export default function LoginPage() {
             <div className="text-center mt-4 text-red-500">{error}</div>
           )}
           <div className="text-center mt-4">
-            <a href="#" className="text-sm text-blue-600">
+            <a href="/forgot-password" className="text-sm underline text-blue-600">
               Mot de passe oublié ?
             </a>
           </div>
           <div className="text-center mt-6 text-gray-500">
             Vous n'avez pas de compte ?{" "}
-            <Link href="/register" className="text-blue-600">
+            <Link href="/register" className="text-blue-600 underline">
               S'inscrire
             </Link>
           </div>
