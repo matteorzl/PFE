@@ -140,12 +140,13 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   useEffect(() => {
-    // Remplace l'URL par celle de ton API
-    fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/categories`)
+    if (!userId) return; // attend que userId soit chargé
+  
+    fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/categories/patient/${userId}`)
       .then(res => res.json())
       .then(data => setCategories(data))
       .catch(() => setCategories([]));
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId || categories.length === 0) return;

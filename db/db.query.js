@@ -467,6 +467,48 @@ async function getAllCategories() {
   }
 }
 
+async function getAllPatientCategories(userId) {
+  const con = await createConnection();
+  try {
+    const [[patient]] = await con.query(
+      'SELECT id, use_custom_order FROM patient WHERE user_id = ?',
+      [userId]
+    );
+
+    if (!patient) throw new Error('Patient not found');
+
+    let query = '';
+    let params = [];
+
+    if (patient.use_custom_order === 1) {
+      // Si ordre personnalisé : jointure avec patient_category
+      query = `
+        SELECT c.*, pc.order_list 
+        FROM category c
+        LEFT JOIN patient_category pc 
+          ON pc.category_id = c.id AND pc.patient_id = ?
+        ORDER BY pc.order_list IS NULL, pc.order_list ASC
+      `;
+      params = [patient.id];
+    } else {
+      // Ordre par défaut : par is_free puis par order_list
+      query = `
+        SELECT c.*, NULL AS order_list
+        FROM category c
+        ORDER BY c.is_free DESC, c.order_list ASC
+      `;
+    }
+
+    const [rows] = await con.query(query, params);
+    await con.end();
+    return rows;
+  } catch (err) {
+    console.error('Erreur lors de la récupération des catégories :', err);
+    throw err;
+  }
+}
+
+
 // Mettre à jour un patient
 async function updatePatient(id, parent_firstname, parent_lastname, phone) {
   const query = `
@@ -1080,6 +1122,7 @@ module.exports = {
   validatePatient,
 
   getAllCategories,
+  getAllPatientCategories,
   getCardsNotInCategory,
   addCardsToCategory,
   getCategoryById,
