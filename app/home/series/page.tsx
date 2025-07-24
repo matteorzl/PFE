@@ -187,21 +187,19 @@ export default function SeriesPage() {
     await fetchCategories();
   };
 
-  const handleOrderChange = async (newOrder: Category[]) => {
-    setOrderCategories(newOrder);
-    // Appel API pour sauvegarder l'ordre côté back
-    try {
-      const order = newOrder.map((cat, idx) => ({ id: cat.id, order_list: idx + 1 }));
-      const res = await fetch('http://localhost:3001/api/categories/order', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order })
-      });
-      if (!res.ok) throw new Error('Erreur lors de la sauvegarde');
-      toast.success('Ordre des séries sauvegardé !');
-    } catch (e) {
-      toast.error('Erreur lors de la sauvegarde de l\'ordre');
-    }
+  const handleOrderChange = (newCategories) => {
+    const payload = newCategories.map((cat, idx) => ({
+      id: cat.id,
+      order_list: idx + 1,
+    }));
+      fetch("http://localhost:3001/api/categories/order", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: payload }),
+    })
+    .then(res => res.json())
+    .then(console.log)
+    .catch(console.error);
   };
   const handleAddCategory = () => {
     // TODO: Ouvrir une modale ou un select pour ajouter une série non présente

@@ -97,13 +97,17 @@ export function OrderCategoriesModal({ isOpen, onClose, categories, onOrderChang
     );
 }
 
-function SortableCategoryItem({ cat, index }: any) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+function SortableCategoryItem({ cat, index, percent, cards, expanded, onToggle, disabled }: any) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: cat.id,
+    disabled // Désactive le drag quand nécessaire
+  });
+  
   return (
     <div
       ref={setNodeRef}
       style={{
-        transform: transform ? CSS.Transform.toString(transform) : undefined,
+        transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
         background: isDragging ? "#f3f4f6" : undefined,
@@ -113,16 +117,25 @@ function SortableCategoryItem({ cat, index }: any) {
       }}
       {...attributes}
       {...listeners}
-      className="border border-default-200 flex items-center gap-3 px-4 py-2 bg-white"
+      className={`border border-default-200 ${disabled ? '' : 'cursor-grab'}`}
     >
-      <span className="cursor-grab text-default-400 select-none">{index + 1}</span>
-      <Avatar
-        src={cat.image}
-        alt={cat.name}
-        className="w-8 h-8 object-cover border border-default-300"
-      />
-      <span className="font-semibold flex-1">{cat.name}</span>
-      <StarsDifficulty difficulty={cat.difficulty} />
+      <div
+        className="flex items-center justify-between gap-3 w-full px-4 py-2 cursor-pointer"
+        onClick={onToggle}
+      >
+        <span className="flex items-center gap-2 font-semibold flex-shrink-0">
+          <span className={`${disabled ? 'text-default-300' : 'text-default-400 cursor-grab'} select-none`}>
+            {index + 1}
+          </span>
+          <Avatar
+            src={cat.image}
+            alt={cat.name}
+            className="w-8 h-8 object-cover border border-default-300"
+          />
+          <span className="font-semibold flex-1">{cat.name}</span>
+        </span>
+        <StarsDifficulty difficulty={cat.difficulty} />
+      </div>
     </div>
   );
 }

@@ -40,6 +40,7 @@ const {
   addCardsToCategory,
   getUserCategoryProgress,
   cardValidated,
+  updatePatientOrderPreference,
   /*category*/
   getAllCategories,
   getCardsByCategory,
@@ -48,6 +49,7 @@ const {
   createCategory,
   deleteCategory,
   updateCategoriesOrder,
+  updatePatientCategoriesOrder,
   /*card*/
   getAllCards,
   getCardImage,
@@ -498,11 +500,18 @@ app.get('/api/patient/:userId/category/:categoryId/progress', async (req, res) =
 // Mettre à jour l'ordre des catégories d'un patient
 app.patch('/api/user/:userId/categories/order', async (req, res) => {
   const { userId } = req.params;
-  const { categoryIds } = req.body;
+  const { order } = req.body;
+  
+  if (!Array.isArray(order)) {
+    return res.status(400).json({ error: "Format de l'ordre invalide" });
+  }
+  
   try {
+    const categoryIds = order.map(item => item.id);
     await updatePatientCategoriesOrder(userId, categoryIds);
     res.status(200).json({ message: "Ordre des catégories mis à jour !" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des catégories." });
   }
 });
@@ -572,6 +581,21 @@ app.post('/api/categories/:categoryId/cards', async (req, res) => {
   }
 });
 
+// Mettre à jour l'ordre global des catégories
+app.patch('/api/categories/order', async (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order)) {
+    return res.status(400).json({ error: "Format de l'ordre invalide" });
+  }
+  try {
+    await updateCategoriesOrder(order);
+    res.status(200).json({ message: "Ordre des séries mis à jour avec succès" });
+  } catch (err) {
+    console.error("Erreur lors de la mise à jour de l'ordre des séries :", err);
+    res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des séries" });
+  }
+});
+
 // Récupérer les cartes d'une catégorie
 app.get('/api/categories/:categoryId/cards', async (req, res) => {
   const { categoryId } = req.params;
@@ -631,7 +655,6 @@ app.patch('/api/categories/:categoryId', upload.single('image'), async (req, res
     res.status(500).json({ error: "Erreur lors de la modification de la catégorie." });
   }
 });
-
 
 // Récupérer une catégorie par son id pour l'édition
 app.get('/api/categories/edit/:categoryId', async (req, res) => {
@@ -1176,17 +1199,29 @@ app.post('/api/categories/:categoryId/cards/order', async (req, res) => {
   }
 });
 
-// Mettre à jour l'ordre global des catégories
-app.patch('/api/categories/order', async (req, res) => {
-  const { order } = req.body;
-  if (!Array.isArray(order)) {
-    return res.status(400).json({ error: "Format de l'ordre invalide" });
-  }
+// Récupérer la préférence d'ordre d'un patient
+app.get('/api/patient/:userId/order-preference', async (req, res) => {
+  const { userId } = req.params;
   try {
-    await updateCategoriesOrder(order);
-    res.status(200).json({ message: "Ordre des séries mis à jour avec succès" });
+    const patient = await getPatientByUserId(userId);
+    if (!patient) return res.status(404).json({ error: "Patient not found" });
+    
+    res.json({ use_custom_order: patient.use_custom_order || 0 });
   } catch (err) {
-    console.error("Erreur lors de la mise à jour de l'ordre des séries :", err);
-    res.status(500).json({ error: "Erreur lors de la mise à jour de l'ordre des séries" });
+    res.status(500).json({ error: "Erreur lors de la récupération des préférences d'ordre" });
+  }
+});
+
+// Modifier la préférence d'ordre d'un patient
+app.patch('/api/patient/:userId/order-preference', async (req, res) => {
+  const { userId } = req.params;
+  const { use_custom_order } = req.body;
+  
+  try {
+    await updatePatientOrderPreference(userId, use_custom_order);
+    res.status(200).json({ message: "Préférence d'ordre mise à jour avec succès" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur lors de la mise à jour des préférences d'ordre" });
   }
 });

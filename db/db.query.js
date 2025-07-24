@@ -336,17 +336,19 @@ async function getCategoriesOrderedForUser(userId) {
   const con = await createConnection();
 
   const [patients] = await con.query(
-    `SELECT id FROM patient WHERE user_id = ?`,
+    `SELECT id, use_custom_order FROM patient WHERE user_id = ?`,
     [userId]
   );
   if (patients.length === 0) {
     await con.end();
     return []; // Pas de patient => pas de catégories
   }
+  
   const patientId = patients[0].id;
+  const useCustomOrder = patients[0].use_custom_order === 1;
 
   const [allCategories] = await con.query(
-    `SELECT * FROM category`
+    `SELECT * FROM category ORDER BY order_list, name`
   );
 
   const [customOrder] = await con.query(
@@ -358,7 +360,9 @@ async function getCategoriesOrderedForUser(userId) {
     const custom = customOrder.find(c => c.category_id === cat.id);
     return {
       ...cat,
-      order: custom ? custom.order_list : cat.order_list
+      // Si ordre personnalisé activé, utiliser l'ordre personnalisé s'il existe, sinon l'ordre global
+      // Si ordre personnalisé désactivé, toujours utiliser l'ordre global
+      order: (useCustomOrder && custom) ? custom.order_list : cat.order_list
     };
   });
 
@@ -551,6 +555,12 @@ async function getCardsByCategory(categoryId) {
 
 // Mettre à jour une catégorie
 async function updateCategory(id, name, description, image, is_free, difficulty) {
+  name = name ?? null;
+  description = description ?? null;
+  is_free = is_free ?? null;
+  difficulty = difficulty ?? null;
+  image = image ?? null;
+
   let query, values;
   if (image) {
     query = `UPDATE category SET name = ?, description = ?, image = ?, is_free = ?, difficulty = ? WHERE id = ?`;
@@ -960,8 +970,66 @@ async function updateCategoriesOrder(orderArray) {
   const con = await createConnection();
   try {
     for (const { id, order_list } of orderArray) {
+      console.log("Update category", id, "order_list", order_list);
       await con.query('UPDATE category SET order_list = ? WHERE id = ?', [order_list, id]);
     }
+    await con.end();
+  } catch (err) {
+    await con.end();
+    throw err;
+  }
+}
+
+async function updatePatientCategoriesOrder(userId, categoryIds) {
+  const con = await createConnection();
+  try {
+    // D'abord récupérer l'ID du patient
+    const [patients] = await con.query('SELECT id FROM patient WHERE user_id = ?', [userId]);
+    if (patients.length === 0) throw new Error('Patient not found');
+    const patientId = patients[0].id;
+    
+    // Mettre à jour l'ordre de chaque catégorie
+    for (let i = 0; i < categoryIds.length; i++) {
+      // Vérifie si l'association existe déjà
+      const [rows] = await con.query(
+        'SELECT * FROM patient_category WHERE patient_id = ? AND category_id = ?', 
+        [patientId, categoryIds[i]]
+      );
+      
+      if (rows.length > 0) {
+        // Mise à jour
+        await con.query(
+          'UPDATE patient_category SET order_list = ? WHERE patient_id = ? AND category_id = ?',
+          [i + 1, patientId, categoryIds[i]]
+        );
+      } else {
+        // Insertion
+        await con.query(
+          'INSERT INTO patient_category (patient_id, category_id, order_list) VALUES (?, ?, ?)',
+          [patientId, categoryIds[i], i + 1]
+        );
+      }
+    }
+    await con.end();
+  } catch (err) {
+    await con.end();
+    throw err;
+  }
+}
+
+// Mettre à jour la préférence d'ordre d'un patient
+async function updatePatientOrderPreference(userId, useCustomOrder) {
+  const con = await createConnection();
+  try {
+    const [patients] = await con.query('SELECT id FROM patient WHERE user_id = ?', [userId]);
+    if (patients.length === 0) throw new Error('Patient not found');
+    
+    const patientId = patients[0].id;
+    await con.query(
+      'UPDATE patient SET use_custom_order = ? WHERE id = ?', 
+      [useCustomOrder, patientId]
+    );
+    
     await con.end();
   } catch (err) {
     await con.end();
@@ -1036,5 +1104,7 @@ module.exports = {
   clearResetToken,
   updateCardsOrderInCategory,
   getTherapistUserInfos,
-  updateCategoriesOrder
+  updateCategoriesOrder,
+  updatePatientCategoriesOrder,
+  updatePatientOrderPreference
 };

@@ -36,7 +36,7 @@ const StarsDifficulty = ({ difficulty }: { difficulty: string | number }) => {
   );
 };
 
-function SortableCategoryItem({ cat, index, percent, cards, expanded, onToggle }: any) {
+function SortableCategoryItem({ cat, index, percent, cards, expanded, onToggle, disabled }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
   return (
     <div
@@ -52,7 +52,7 @@ function SortableCategoryItem({ cat, index, percent, cards, expanded, onToggle }
       }}
       {...attributes}
       {...listeners}
-      className="border border-default-200"
+      className={`border border-default-200 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
     >
       <div
         className="flex items-center justify-between gap-3 w-full px-4 py-2 cursor-pointer"
@@ -114,6 +114,8 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
   const [cardsByCategory, setCardsByCategory] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [useCustomOrder, setUseCustomOrder] = useState(false);
+  const [isDraggingEnabled, setIsDraggingEnabled] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -147,7 +149,68 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
       });
   }, [user]);
 
+  // Récupérer les préférences d'ordre du patient
+  useEffect(() => {
+    if (!user) return;
+    
+    // Récupérer si le patient utilise un ordre personnalisé
+    fetch(`http://localhost:3001/api/patient/${user.id}/order-preference`)
+      .then(res => res.json())
+      .then(data => {
+        setUseCustomOrder(data.use_custom_order === 1);
+        setIsDraggingEnabled(data.use_custom_order === 1);
+      });
+      
+    // Reste du code existant pour charger les catégories...
+  }, [user]);
+
+  // Fonction pour basculer entre ordre personnalisé et ordre par défaut
+  const toggleCustomOrder = async (checked: boolean) => {
+    setUseCustomOrder(checked);
+    setIsDraggingEnabled(checked);
+    
+    try {
+      const response = await fetch(`http://localhost:3001/api/patient/${user?.id}/order-preference`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ use_custom_order: checked ? 1 : 0 })
+      });
+      
+      if (response.ok) {
+        // Si on active l'ordre personnalisé pour la première fois,
+        // on initialise avec l'ordre par défaut actuel
+        if (checked) {
+          const orderPayload = categories.map((cat, idx) => ({
+            id: cat.id,
+            order_list: idx + 1
+          }));
+          
+          await fetch(`http://localhost:3001/api/user/${user?.id}/categories/order`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: orderPayload })
+          });
+        }
+        
+        // Recharger les catégories après le changement
+        setLoading(true);
+        const res = await fetch(`http://localhost:3001/api/user/${user.id}/categories`);
+        const cats = await res.json();
+        if (Array.isArray(cats)) {
+          cats.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+          setCategories(cats);
+        }
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de préférence d'ordre:", error);
+    }
+  };
+
+  // Modifier handleDragEnd pour ne fonctionner que si l'ordre personnalisé est activé
   function handleDragEnd(event: any) {
+    if (!useCustomOrder) return;
+    
     const { active, over } = event;
     if (active.id !== over.id) {
       const oldIndex = categories.findIndex(cat => cat.id === active.id);
@@ -158,7 +221,12 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
       fetch(`http://localhost:3001/api/user/${user?.id}/categories/order`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ categoryIds: newCategories.map(cat => cat.id) })
+        body: JSON.stringify({ 
+          order: newCategories.map((cat, idx) => ({
+            id: cat.id,
+            order_list: idx + 1
+          }))
+        })
       });
     }
   }
@@ -176,6 +244,27 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
               Ordre des séries de {user?.firstname} {user?.lastname}
             </ModalHeader>
             <ModalBody>
+              <div className="mb-4 flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={useCustomOrder} 
+                    onChange={(e) => toggleCustomOrder(e.target.checked)}
+                    className="form-checkbox h-5 w-5 text-blue-600"
+                  />
+                  <span>Ordre personnalisé</span>
+                </label>
+                {useCustomOrder ? (
+                  <span className="ml-2 text-xs text-gray-500">
+                    (Glissez-déposez les séries pour personnaliser l'ordre)
+                  </span>
+                ) : (
+                  <span className="ml-2 text-xs text-gray-500">
+                    (Utilise l'ordre défini par l'administrateur)
+                  </span>
+                )}
+              </div>
+              
               {loading ? (
                 <div className="flex justify-center items-center h-32">
                   <Spinner />
@@ -205,6 +294,7 @@ export function OrderCategoriesUserModal({ isOpen, onClose, user }: OrderCategor
                           cards={cards}
                           expanded={!!expanded[cat.id]}
                           onToggle={() => toggleExpand(cat.id)}
+                          disabled={!useCustomOrder} // Désactive le glisser-déposer si ordre personnalisé désactivé
                         />
                       );
                     })}
