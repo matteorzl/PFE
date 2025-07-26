@@ -43,6 +43,7 @@ const {
   updatePatientOrderPreference,
   /*category*/
   getAllCategories,
+  getAllPatientCategories,
   getCardsByCategory,
   updateCategory,
   getCategoryById,
@@ -553,6 +554,23 @@ app.post('/api/validate/card', async (req,res)=> {
 app.get('/api/categories', async (req, res) => {
   try {
     let categories = await getAllCategories();
+    categories = categories.map(cat => ({
+      ...cat,
+      image: cat.image
+        ? `data:image/jpeg;base64,${cat.image.toString('base64')}`
+        : null,
+    }));
+    res.json(categories);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la récupération des catégories." });
+  }
+});
+
+app.get('/api/categories/patient/:userId', async (req, res) => {
+  const { userId } = req.params;
+  
+  try {
+    let categories = await getAllPatientCategories(userId);
     categories = categories.map(cat => ({
       ...cat,
       image: cat.image

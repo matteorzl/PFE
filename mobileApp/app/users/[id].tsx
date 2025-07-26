@@ -381,12 +381,12 @@ export default function UserScreen() {
             </>
           ) : activeTab === 'therapist' && (
             <>
-              <View style={[styles.contentFirst, {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}]}>
+              <View style={[styles.contentFirst, {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly'}]}>
                 <View style={{flex:1, alignItems:'center'}}>
-                  <Text style={[styles.tab, {textAlign:'center'}]}>Orthophoniste</Text>
+                  <Text style={[styles.tab, {textAlign:'right'}]}>Orthophoniste</Text>
                 </View>
-                <TouchableOpacity onPress={() => setShowInfo(v => !v)} style={{marginRight: 8}}>
-                  <MaterialIcons name="info-outline" size={18} color="#5558fd" />
+                <TouchableOpacity onPress={() => setShowInfo(v => !v)} style={{position:'absolute',right:8}}>
+                  <MaterialIcons name="info-outline" size={30} color="#5558fd" />
                 </TouchableOpacity>
               </View>
               {!patient?.therapist_id ? (
