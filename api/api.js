@@ -104,13 +104,26 @@ function authenticateToken(req, res, next) {
 
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
-    const completedSeries = await getCompletedSeriesCount();
-    const totalExercises = await getTotalExercisesDone();
+    const { therapistId, role } = req.query;
+    
+    let completedSeries, totalExercises;
+    
+    if (role === 'therapist' && therapistId) {
+      // Statistiques pour les patients du thérapeute
+      completedSeries = await getCompletedSeriesCountForTherapist(therapistId);
+      totalExercises = await getTotalExercisesDoneForTherapist(therapistId);
+    } else {
+      // Statistiques globales (pour les administrateurs)
+      completedSeries = await getCompletedSeriesCount();
+      totalExercises = await getTotalExercisesDone();
+    }
+    
     res.json({
       completedSeries,
       totalExercises
     });
   } catch (err) {
+    console.error("Erreur stats dashboard:", err);
     res.status(500).json({ error: "Erreur lors de la récupération des stats" });
   }
 });
@@ -1008,7 +1021,6 @@ app.get('/api/therapist-id/:userId', async (req, res) => {
   const { userId } = req.params;
   try {
     const therapist = await getTherapistIdByUserId(userId);
-    console.log(therapist)
     if (!therapist) return res.status(404).json({ error: "Therapist not found" });
     res.json({ therapist});
   } catch (err) {
@@ -1085,21 +1097,30 @@ app.get('/api/cards/:id/sound', async (req, res) => {
 
 // Créer une nouvelle carte
 app.post('/api/cards', upload.fields([
-  { name: 'image', maxCount: 1 },           // PNG/JPG
-  { name: 'draw_animation', maxCount: 1 },  // GIF
+  { name: 'image', maxCount: 1 },
+  { name: 'draw_animation', maxCount: 1 },
   { name: 'sound_file', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { name } = req.body;
-    const draw_animation = req.files['image']?.[0]?.buffer || null; // PNG/JPG
-    const real_animation = req.files['draw_animation']?.[0]?.buffer || null; // GIF
+    const { name, therapistId } = req.body;
+    const draw_animation = req.files['image']?.[0]?.buffer || null;
+    const real_animation = req.files['draw_animation']?.[0]?.buffer || null;
     const sound_file = req.files['sound_file']?.[0]?.buffer || null;
 
     if (!name || !draw_animation || !real_animation || !sound_file) {
       return res.status(400).json({ error: "Tous les champs sont obligatoires." });
     }
 
-    await createCard(name, draw_animation, real_animation, sound_file);
+    // Conversion en nombre entier et gestion d'une valeur par défaut
+    let createdBy = null;
+    if (therapistId && therapistId !== 'null') {
+      createdBy = parseInt(therapistId, 10);
+    } else {
+      // Utilise une valeur par défaut si NULL n'est pas accepté (1 = admin par exemple)
+      createdBy = 1; 
+    }
+
+    await createCard(name, draw_animation, real_animation, sound_file, createdBy);
     res.status(201).json({ message: "Carte créée avec succès." });
   } catch (err) {
     console.error("Erreur lors de la création de la carte :", err);

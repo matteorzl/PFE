@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Modal, ModalContent, ModalBody, ModalHeader, ModalFooter, Button, Input, Switch } from "@heroui/react";
+import Cookies from "js-cookie";
 
 export default function CreateModal({ isOpen, onClose, onCreated }) {
   const [name, setName] = useState("");
@@ -26,11 +27,33 @@ export default function CreateModal({ isOpen, onClose, onCreated }) {
     setLoading(true);
     setError(null);
 
+    let therapistId = "1";
+    try {
+      const userCookie = Cookies.get('user');
+      
+      if (userCookie) {
+        const user = JSON.parse(userCookie);
+        
+        if (user.role === 'therapist') {
+          if (user.therapist?.id) {
+            therapistId = user.therapist.id.toString();
+          } else if (user.therapistId) {
+            therapistId = user.therapistId.toString();
+          } else if (user.id) {
+            therapistId = user.id.toString();
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur:", error);
+    }
+
     try {
       const formData = new FormData();
       formData.append("name", name);
-      if (image) formData.append("image", image); // image classique
-      if (animation) formData.append("draw_animation", animation); // animation GIF
+      formData.append("therapistId", therapistId);
+      if (image) formData.append("image", image);
+      if (animation) formData.append("draw_animation", animation);
       if (sound) formData.append("sound_file", sound);
 
       const res = await fetch("http://localhost:3001/api/cards", {

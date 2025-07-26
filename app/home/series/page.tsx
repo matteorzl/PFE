@@ -7,7 +7,7 @@ import { EditModal } from "@/components/category/EditModal";
 import { DeleteModal } from "@/components/category/DeleteModal";
 import { CreateModal } from "@/components/category/CreateModal";
 import { OrderCategoriesModal } from '@/components/category/OrderCategoriesModal';
-import { toast } from 'sonner'; // ou tout autre système de toast si déjà utilisé
+import Cookies from "js-cookie";
 
 interface Category {
   id: number;
@@ -134,11 +134,42 @@ export default function SeriesPage() {
   const [searchValue, setSearchValue] = useState(""); 
   const[isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Ajoute cet état
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false); // Pour la modale d'ordre des séries
-  const [orderCategories, setOrderCategories] = useState<Category[]>([]); // Pour l'ordre local
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [orderCategories, setOrderCategories] = useState<Category[]>([]);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+  const [currentUserTherapistId, setCurrentUserTherapistId] = useState<number | null>(null);
   const router = useRouter();
   const iconClasses = "text-xl text-default-500 pointer-events-none flex-shrink-0";
+
+  useEffect(() => {
+    const userCookie = Cookies.get('user');
+    if (userCookie) {
+      try {
+        const parsedUser = JSON.parse(userCookie);
+        setIsCurrentUserAdmin(parsedUser?.role === 'admin');
+        
+        if (parsedUser?.role === 'therapist') {
+          if (parsedUser.therapist?.id) {
+            setCurrentUserTherapistId(parsedUser.therapist.id);
+          } else if (parsedUser.therapistId) {
+            setCurrentUserTherapistId(parsedUser.therapistId);
+          } else {
+            console.warn("Impossible de trouver l'ID thérapeute dans:", parsedUser);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur parsing user cookie:", err);
+      }
+    }
+  }, []);
+
+  const canEditOrDelete = (categoryCreatedBy: number) => {
+
+  if (isCurrentUserAdmin) return true;
+  
+  return Number(currentUserTherapistId) === Number(categoryCreatedBy);
+};
 
   const fetchCategories = async () => {
     try {
@@ -198,12 +229,7 @@ export default function SeriesPage() {
         body: JSON.stringify({ order: payload }),
     })
     .then(res => res.json())
-    .then(console.log)
     .catch(console.error);
-  };
-  const handleAddCategory = () => {
-    // TODO: Ouvrir une modale ou un select pour ajouter une série non présente
-    alert('Ajouter une série (à implémenter)');
   };
 
   if (loading) {
@@ -228,13 +254,15 @@ export default function SeriesPage() {
           </span>
         </span>
         <div className="flex gap-2">
-          <Button
-              color="primary"
-              size="sm"
-              onPress={() => setIsOrderModalOpen(true)}
-            >
-            Ordre des séries
-          </Button>
+          {isCurrentUserAdmin && (
+            <Button
+                color="primary"
+                size="sm"
+                onPress={() => setIsOrderModalOpen(true)}
+              >
+              Ordre des séries
+            </Button>
+          )}
           <Button 
             color="primary" 
             endContent={<PlusIcon />}
@@ -287,28 +315,36 @@ export default function SeriesPage() {
                   <Button variant="light" className="text-2xl font-bold w-10 h-10 flex items-start justify-center p-0 text-white">...</Button>
                 </DropdownTrigger>
                 <DropdownMenu>
-                  <DropdownItem
-                    key="edit"
-                    startContent={<EditDocumentIcon className={iconClasses} />}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    Modifier
-                  </DropdownItem>
-                  <DropdownItem
-                    key="delete"
-                    className="text-danger"
-                    color="danger"
-                    startContent={<DeleteDocumentIcon className={cn(iconClasses, "text-danger")} />}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setIsDeleteModalOpen(true);
-                    }}
-                  >
-                    Supprimer
-                  </DropdownItem>
+                  {canEditOrDelete(category.created_by) ? (
+                    <>
+                      <DropdownItem
+                        key="edit"
+                        startContent={<EditDocumentIcon className={iconClasses} />}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        Modifier
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger"
+                        color="danger"
+                        startContent={<DeleteDocumentIcon className={cn(iconClasses, "text-danger")} />}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setIsDeleteModalOpen(true);
+                        }}
+                      >
+                        Supprimer
+                      </DropdownItem>
+                    </>
+                  ) : (
+                    <DropdownItem key="no-permission" isDisabled>
+                      Créé par un autre thérapeute
+                    </DropdownItem>
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>
@@ -366,7 +402,6 @@ export default function SeriesPage() {
         onClose={() => setIsOrderModalOpen(false)}
         categories={orderCategories}
         onOrderChange={handleOrderChange}
-        onAddCategory={handleAddCategory}
       />
     </div>
   );

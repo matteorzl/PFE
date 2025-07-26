@@ -348,7 +348,6 @@ export default function UsersPage() {
   // Ajout de la validation des patients pour les thérapeutes
   const handleValidatePatient = async (id: string, is_accepted: number) => {
     const token = Cookies.get("token");
-    console.log('ID:', id);
     const res = await fetch(`http://localhost:3001/api/validate/patient/${id}`, {
       method: "PATCH",
       headers: {

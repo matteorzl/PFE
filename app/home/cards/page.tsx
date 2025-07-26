@@ -18,9 +18,9 @@ interface CardItem {
   real_animation: string;
   is_validated: number | null;
   order_list: number;
+  created_by: number;
 }
 
-// Utilitaire pour déterminer si une couleur RGB est claire
 function isColorLight(rgb: string): boolean {
   const [r, g, b] = rgb.match(/\d+/g)?.map(Number) ?? [255, 255, 255];
   const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
@@ -136,6 +136,8 @@ export default function CardsPage() {
   const [cardGradients, setCardGradients] = useState<{ [cardId: number]: string }>({});
   const [cardLightColors, setCardLightColors] = useState<{ [cardId: number]: string }>({});
   const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+  const [currentUserTherapistId, setCurrentUserTherapistId] = useState<number | null>(null);
   const router = useRouter();
 
   const fetchCards = async () => {
@@ -163,7 +165,6 @@ export default function CardsPage() {
       const colorThief = new ColorThief();
       const palette = colorThief.getPalette(imgElement, 2);
       if (palette && palette.length >= 2) {
-        // Trouve la couleur la plus claire (celle avec la plus grande somme r+g+b)
         const [c1, c2] = palette;
         const lightest = (c1[0] + c1[1] + c1[2]) > (c2[0] + c2[1] + c2[2]) ? c1 : c2;
         const gradient = `linear-gradient(135deg, rgb(${c1.join(",")}), rgb(${c2.join(",")}))`;
@@ -185,14 +186,29 @@ export default function CardsPage() {
     
     if (userCookie) {
       try {
-        setCurrentUser(JSON.parse(userCookie));
-      } catch {
+        const parsedUser = JSON.parse(userCookie);
+        setCurrentUser(parsedUser);
+        setIsCurrentUserAdmin(parsedUser?.role === 'admin');
+        
+        if (parsedUser?.role === 'therapist') {
+          if (parsedUser.therapist?.id) {
+            setCurrentUserTherapistId(parsedUser.therapist.id);
+          } else if (parsedUser.therapistId) {
+            setCurrentUserTherapistId(parsedUser.therapistId);
+          } else {
+            console.warn("Impossible de trouver l'ID thérapeute dans:", parsedUser);
+          }
+        }
+      } catch (err) {
+        console.error("Erreur parsing user cookie:", err);
         setCurrentUser(null);
       }
     } else {
       setCurrentUser(null);
     }
-      
+  }, []);
+
+  useEffect(() => {
     let filtered = [...cards];
 
     if (searchValue) {
@@ -213,6 +229,12 @@ export default function CardsPage() {
 
     setFilteredCards(filtered);
   }, [searchValue, filterStatus, filterFree, cards]);
+
+  const canEditOrDelete = (cardCreatedBy: number) => {
+  if (isCurrentUserAdmin) return true;
+
+  return Number(currentUserTherapistId) === Number(cardCreatedBy);
+};
 
   const handleValidateCard = async (cardId: number, is_validated: 1 | 2) => {
     await fetch(`http://localhost:3001/api/cards/${cardId}/validate`, {
@@ -375,22 +397,30 @@ export default function CardsPage() {
                       >...</Button>
                     </DropdownTrigger>
                     <DropdownMenu>
-                      <DropdownItem
-                        key="edit"
-                        startContent={<EditDocumentIcon />}
-                        onClick={() => handleEditClick(card)}
-                      >
-                        Modifier
-                      </DropdownItem>
-                      <DropdownItem
-                        key="delete"
-                        className="text-danger"
-                        color="danger"
-                        startContent={<DeleteDocumentIcon />}
-                        onClick={() => handleDeleteClick(card)}
-                      >
-                        Supprimer
-                      </DropdownItem>
+                      {canEditOrDelete(card.created_by) ? (
+                        <>
+                          <DropdownItem
+                            key="edit"
+                            startContent={<EditDocumentIcon />}
+                            onClick={() => handleEditClick(card)}
+                          >
+                            Modifier
+                          </DropdownItem>
+                          <DropdownItem
+                            key="delete"
+                            className="text-danger"
+                            color="danger"
+                            startContent={<DeleteDocumentIcon />}
+                            onClick={() => handleDeleteClick(card)}
+                          >
+                            Supprimer
+                          </DropdownItem>
+                        </>
+                      ) : (
+                        <DropdownItem key="no-permission" isDisabled>
+                          Créé par un autre thérapeute
+                        </DropdownItem>
+                      )}
                     </DropdownMenu>
                   </Dropdown>
                 </div>

@@ -740,7 +740,7 @@ async function createCategory(name, description, therapistId, image, is_free, di
 // Fonction pour récupérer toutes les cartes
 async function getAllCards() {
   const query = `
-    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, order_list
+    SELECT id, name, sound_file, draw_animation, real_animation, is_validated, order_list, created_by
     FROM card
   `;
 
@@ -798,12 +798,12 @@ async function getCardSound(cardId) {
 }
 
 // Créer une nouvelle carte
-async function createCard(name, draw_animation, real_animation, sound_file) {
+async function createCard(name, draw_animation, real_animation, sound_file, created_by) {
   const query = `
-    INSERT INTO card (name, draw_animation, real_animation, sound_file, is_validated, order_list)
-    VALUES (?, ?, ?, ?, 0, 1)
+    INSERT INTO card (name, draw_animation, real_animation, sound_file, is_validated, order_list, created_by)
+    VALUES (?, ?, ?, ?, 0, 1, ?)
   `;
-  const values = [name, draw_animation, real_animation, sound_file];
+  const values = [name, draw_animation, real_animation, sound_file, created_by];
 
   try {
     const con = await createConnection();
@@ -818,7 +818,6 @@ async function createCard(name, draw_animation, real_animation, sound_file) {
 
 // Valider une carte
 async function validateCard(id, name, draw_animation, real_animation, sound_file, is_validated) {
-  console.log('validateCard', { id, is_validated }); // Ajoute ce log
   if (is_validated === undefined) return;
   const query = `UPDATE card SET is_validated = ? WHERE id = ?`;
   const values = [is_validated, id];
@@ -970,7 +969,6 @@ async function updateCategoriesOrder(orderArray) {
   const con = await createConnection();
   try {
     for (const { id, order_list } of orderArray) {
-      console.log("Update category", id, "order_list", order_list);
       await con.query('UPDATE category SET order_list = ? WHERE id = ?', [order_list, id]);
     }
     await con.end();
@@ -1051,9 +1049,58 @@ async function getTherapistUserInfos(therapistId) {
   return rows[0] || null;
 }
 
+// Nombre de séries complétées à 100% pour les patients d'un thérapeute
+async function getCompletedSeriesCountForTherapist(therapistId) {
+  const query = `
+    SELECT COUNT(*) AS completed_series_count
+    FROM (
+      SELECT pc.patient_id, pc.category_id
+      FROM patient_category pc
+      JOIN patient p ON p.id = pc.patient_id
+      JOIN (
+        SELECT category_id, COUNT(*) AS total_cards
+        FROM card_category
+        GROUP BY category_id
+      ) cc ON cc.category_id = pc.category_id
+      JOIN (
+        SELECT patient_id, category_id, COUNT(*) AS validated_cards
+        FROM patient_card
+        WHERE is_validated = 1
+        GROUP BY patient_id, category_id
+      ) pcv ON pcv.patient_id = pc.patient_id AND pcv.category_id = pc.category_id
+      WHERE pcv.validated_cards = cc.total_cards
+      AND p.therapist_id = ?
+      GROUP BY pc.patient_id, pc.category_id
+    ) AS completed_series;
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [therapistId]);
+  await con.end();
+  return rows[0]?.completed_series_count || 0;
+}
+
+// Nombre total d'exercices réalisés par les patients d'un thérapeute
+async function getTotalExercisesDoneForTherapist(therapistId) {
+  const query = `
+    SELECT COUNT(*) AS total_exercises 
+    FROM patient_card pc
+    JOIN patient p ON p.id = pc.patient_id
+    WHERE pc.is_validated = 1
+    AND p.therapist_id = ?
+  `;
+  const con = await createConnection();
+  const [rows] = await con.query(query, [therapistId]);
+  await con.end();
+  return rows[0]?.total_exercises || 0;
+}
+
+
+
 module.exports = {
   getCompletedSeriesCount,
   getTotalExercisesDone,
+  getCompletedSeriesCountForTherapist,
+  getTotalExercisesDoneForTherapist,
 
   createUser,
   updateUser,

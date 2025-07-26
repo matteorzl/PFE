@@ -21,6 +21,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React from 'react';
+import Cookies from 'js-cookie';
 
 interface CardItem {
   id: number;
@@ -82,7 +83,10 @@ export default function CategoryCardsPage() {
   const [cards, setCards] = useState<CardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [orderChanged, setOrderChanged] = useState(false); // Ajout état pour le bouton
+  const [orderChanged, setOrderChanged] = useState(false);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
+  const [currentUserTherapistId, setCurrentUserTherapistId] = useState<number | null>(null);
+  const [categoryCreator, setCategoryCreator] = useState<number | null>(null);
   const searchParams = useSearchParams();
   const params = useParams();
   const categoryName = searchParams.get('name');
@@ -115,6 +119,28 @@ export default function CategoryCardsPage() {
     fetchCards();
   }, [categoryId]);
 
+  useEffect(() => {
+    const userCookie = Cookies.get('user');
+    if (userCookie) {
+      const parsedUser = JSON.parse(userCookie);
+      setIsCurrentUserAdmin(parsedUser?.role === 'admin');
+      
+      if (parsedUser?.role === 'therapist' && parsedUser?.therapist?.id) {
+        setCurrentUserTherapistId(parsedUser.therapist.id);
+      }
+    }
+    
+    const fetchCategoryCreator = async () => {
+      const response = await fetch(`http://localhost:3001/api/categories/edit/${categoryId}`);
+      if (response.ok) {
+        const category = await response.json();
+        setCategoryCreator(category.created_by);
+      }
+    };
+    
+    fetchCategoryCreator();
+  }, [categoryId]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -124,7 +150,7 @@ export default function CategoryCardsPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         const newItems = arrayMove(items, oldIndex, newIndex);
 
-        setOrderChanged(true); // Active le bouton
+        setOrderChanged(true);
 
         return newItems.map((item, index) => ({
           ...item,
@@ -134,7 +160,6 @@ export default function CategoryCardsPage() {
     }
   };
 
-  // Fonction pour sauvegarder l'ordre
   const handleSaveOrder = async () => {
     try {
       const response = await fetch(`http://localhost:3001/api/categories/${categoryId}/cards/order`, {
@@ -147,6 +172,11 @@ export default function CategoryCardsPage() {
     } catch (error) {
       alert("Erreur lors de la sauvegarde de l'ordre");
     }
+  };
+
+  const canEditOrDeleteCards = () => {
+    if (isCurrentUserAdmin) return true;
+    return currentUserTherapistId === categoryCreator;
   };
 
   if (loading) {
@@ -167,9 +197,11 @@ export default function CategoryCardsPage() {
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold">Cartes</h1>
         <div className="flex gap-2">
-          <Button color="primary" endContent={<PlusIcon />} onPress={() => setAddModalOpen(true)}>
-            Ajouter des cartes
-          </Button>
+          {canEditOrDeleteCards() && (
+            <Button color="primary" endContent={<PlusIcon />} onPress={() => setAddModalOpen(true)}>
+              Ajouter des cartes
+            </Button>
+          )}
           {orderChanged && (
             <Button color="success" className="text-white" onPress={handleSaveOrder}>
               Enregistrer l'ordre

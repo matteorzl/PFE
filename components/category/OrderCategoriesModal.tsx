@@ -38,7 +38,6 @@ export function OrderCategoriesModal({ isOpen, onClose, categories, onOrderChang
     onClose: () => void;
     categories: any[];
     onOrderChange: (newOrder: any[]) => void;
-    onAddCategory: () => void;
   }) {
     const [localCategories, setLocalCategories] = useState<any[]>(categories);
     const sensors = useSensors(
@@ -69,9 +68,6 @@ export function OrderCategoriesModal({ isOpen, onClose, categories, onOrderChang
                 Ordre des séries
               </ModalHeader>
               <ModalBody>
-                <div className="flex justify-end mb-2">
-                  <Button color="primary" onPress={onAddCategory}>Ajouter une série</Button>
-                </div>
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}

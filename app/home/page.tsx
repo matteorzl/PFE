@@ -13,6 +13,7 @@ import {
   Legend,
   TimeScale,
 } from "chart.js";
+import Cookies from "js-cookie";
 
 Chart.register(LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, TimeScale);
 
@@ -22,33 +23,50 @@ export default function DashboardPage() {
   const [completedSeries, setCompletedSeries] = useState<number | null>(null);
   const [totalExercises, setTotalExercises] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    // Récupérer l'utilisateur actuel
+    const userCookie = Cookies.get('user');
+    const parsedUser = userCookie ? JSON.parse(userCookie) : null;
+    setCurrentUser(parsedUser);
+
     async function fetchData() {
       try {
-        const [
-          numberResponse,
-          evolutionResponse,
-          statsResponse
-        ] = await Promise.all([
-          fetch("http://localhost:3001/api/total/users/number"),
-          fetch("http://localhost:3001/api/evolution/users"),
-          fetch("http://localhost:3001/api/dashboard/stats")
-        ]);
+        // Préparer les paramètres pour les stats en fonction du rôle
+        let statsUrl = "http://localhost:3001/api/dashboard/stats";
+        if (parsedUser?.role === 'therapist' && parsedUser?.therapist?.id) {
+          statsUrl += `?role=therapist&therapistId=${parsedUser.therapist.id}`;
+        }
 
-        const numberData = await numberResponse.json();
-        const evolutionData = await evolutionResponse.json();
-        const statsData = await statsResponse.json();
+        const statsPromise = fetch(statsUrl);
+        
+        // Pour les admins uniquement, récupérer les données globales
+        const promises = [statsPromise];
+        
+        if (parsedUser?.role === 'admin') {
+          promises.push(
+            fetch("http://localhost:3001/api/total/users/number"),
+            fetch("http://localhost:3001/api/evolution/users")
+          );
+        }
 
-        setUserNumber(numberData.count);
-        setUserEvolution(Array.isArray(evolutionData) ? evolutionData : []);
+        const responses = await Promise.all(promises);
+        const statsData = await responses[0].json();
+        
         setCompletedSeries(statsData.completedSeries ?? null);
         setTotalExercises(statsData.totalExercises ?? null);
+        
+        // Si admin, récupérer les autres données
+        if (parsedUser?.role === 'admin' && responses.length > 1) {
+          const numberData = await responses[1].json();
+          const evolutionData = await responses[2].json();
+          
+          setUserNumber(numberData.count);
+          setUserEvolution(Array.isArray(evolutionData) ? evolutionData : []);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setUserEvolution([]);
-        setCompletedSeries(null);
-        setTotalExercises(null);
       } finally {
         setLoading(false);
       }
@@ -65,6 +83,10 @@ export default function DashboardPage() {
     );
   }
 
+  const isTherapist = currentUser?.role === 'therapist';
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Traitement pour le graphique (seulement pour admin)
   const evolutionByDate: Record<string, number> = {};
   userEvolution.forEach((d) => {
     if (!d || !d.date) return;
@@ -77,21 +99,32 @@ export default function DashboardPage() {
 
   return (
     <div className="gap-4 p-4">
+      <h1 className="text-2xl font-bold mb-6">
+        {isTherapist ? "Tableau de bord de vos patients" : "Tableau de bord"}
+      </h1>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <Card className="w-full">
-          <CardHeader className="pb-0 pt-2 px-4">
-            <h4 className="font-bold text-large">Total Utilisateurs</h4>
-          </CardHeader>
-          <CardBody>
-            <p className="text-3xl font-bold text-blue-600">
-              {userNumber ?? "..."}
-            </p>
-          </CardBody>
-        </Card>
+        {/* Carte utilisateurs (admin uniquement) */}
+        {isAdmin && (
+          <Card className="w-full">
+            <CardHeader className="pb-0 pt-2 px-4">
+              <h4 className="font-bold text-large">Total Utilisateurs</h4>
+            </CardHeader>
+            <CardBody>
+              <p className="text-3xl font-bold text-blue-600">
+                {userNumber ?? "..."}
+              </p>
+            </CardBody>
+          </Card>
+        )}
 
+        {/* Carte séries complétées */}
         <Card className="w-full">
           <CardHeader className="pb-0 pt-2 px-4">
-            <h3 className="text-lg font-semibold">Séries complétées à 100%</h3>
+            <h3 className="text-lg font-semibold">
+              Séries complétées à 100%
+              {isTherapist && <span className="text-sm text-gray-500 block">par vos patients</span>}
+            </h3>
           </CardHeader>
           <CardBody>
             <p className="text-3xl font-bold text-blue-600">
@@ -100,9 +133,13 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
+        {/* Carte exercices complétés */}
         <Card className="w-full">
           <CardHeader className="pb-0 pt-2 px-4">
-            <h3 className="text-lg font-semibold">Exercices Complétés</h3>
+            <h3 className="text-lg font-semibold">
+              Exercices Complétés
+              {isTherapist && <span className="text-sm text-gray-500 block">par vos patients</span>}
+            </h3>
           </CardHeader>
           <CardBody>
             <p className="text-3xl font-bold text-blue-600">
@@ -112,7 +149,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {chartLabels.length > 0 && (
+      {/* Graphique évolution (admin uniquement) */}
+      {isAdmin && chartLabels.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card className="w-full">
             <CardHeader className="pb-0 pt-2 px-4">

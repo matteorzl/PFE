@@ -287,7 +287,6 @@ async function main() {
       ]
     );
     cardIds.push(result.insertId);
-    console.log(`Carte "${card.name}" insérée avec id ${result.insertId}.`);
   }
 
   // Association cartes-catégories
@@ -323,7 +322,6 @@ async function main() {
   await conn.query('SET FOREIGN_KEY_CHECKS=1');
 
   await conn.end();
-  console.log('Terminé !');
 }
 
 main().catch(console.error);
